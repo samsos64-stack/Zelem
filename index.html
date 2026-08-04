@@ -1,0 +1,2554 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Zelem</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#12112a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<style>
+  :root{
+    --bg:#12112a; --panel:#1c1b3a; --txt:#e8ecf5; --muted:#9aa3c7;
+    --or:#ffcf33; --or2:#ffb454; --accent:#8a7dff;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{height:100%; margin:0; background:var(--bg); color:var(--txt);
+    font-family:Nunito,"Baloo 2",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    overflow:hidden; user-select:none; -webkit-user-select:none; touch-action:manipulation}
+  #app{display:flex; flex-direction:column; height:100dvh}
+  #topbar{height:46px; display:flex; align-items:center; justify-content:space-between;
+    padding:0 14px; font-weight:800}
+  #topbar .titre{letter-spacing:.5px}
+  #topbar .titre b{color:var(--or)}
+  #btnMenu, #btnSon{background:#2a2950; color:var(--txt); border:none; border-radius:10px;
+    padding:8px 12px; font-weight:800; font-size:14px}
+  #hud{font-size:13px; color:#ffe08a; font-weight:800; white-space:nowrap}
+  #table{flex:1; width:100%; display:block}
+  #actions{min-height:78px; display:flex; gap:10px; align-items:center;
+    justify-content:center; padding:10px 14px calc(10px + env(safe-area-inset-bottom))}
+  #actions button{border:none; border-radius:14px; font-weight:800; font-size:16px;
+    padding:14px 18px; color:#20223f; box-shadow:0 6px 0 rgba(0,0,0,.25)}
+  #btnPioche{background:#4aa3ff; color:#06213f}
+  #btnGarder{background:#3a3f66; color:var(--txt)}
+  #btnSparko{background:linear-gradient(180deg,#ffe27a,#ffcf33); color:#3a2c00}
+  #actions button:active{transform:translateY(3px); box-shadow:0 3px 0 rgba(0,0,0,.25)}
+
+  #overlay{position:fixed; inset:0; display:none; align-items:center; justify-content:center;
+    background:rgba(6,8,20,.72); backdrop-filter:blur(3px); padding:22px; z-index:10}
+  .panneau{background:var(--panel); border:1px solid #2f2e57; border-radius:20px;
+    padding:22px; width:100%; max-width:360px; text-align:center; box-shadow:0 18px 50px rgba(0,0,0,.5)}
+  .panneau.large{max-width:400px; text-align:left}
+  .panneau h1{font-size:30px; margin:0 0 2px; text-align:center}
+  .panneau h1, #topbar .titre b{color:var(--or)}
+  .panneau h2{font-size:20px; margin:0 0 12px}
+  .soustitre{color:var(--muted); text-align:center; margin:0 0 16px}
+  .panneau p{color:var(--muted); margin:0 0 16px}
+  .panneau label{display:flex; align-items:center; justify-content:space-between;
+    gap:10px; margin:10px 0; font-weight:700; font-size:15px}
+  .panneau label.chk{justify-content:flex-start; font-weight:600; color:#d7dcf3}
+  .panneau select{background:#12112a; color:var(--txt); border:1px solid #3a3f66;
+    border-radius:10px; padding:8px 10px; font-size:15px; font-weight:700}
+  .panneau input[type=checkbox]{width:22px; height:22px; accent-color:var(--accent)}
+  button.gros{width:100%; margin-top:16px; background:linear-gradient(180deg,#9b8dff,#7a6bff);
+    color:#fff; border:none; border-radius:14px; padding:15px; font-weight:800; font-size:17px}
+  button.sec{width:100%; margin-top:8px; background:#2a2950; color:var(--txt);
+    border:none; border-radius:14px; padding:12px; font-weight:700}
+  .panneau.menu{max-width:380px; text-align:center; background:linear-gradient(180deg,#241f4d,#1a1636); border:1px solid #37318a}
+  .titreJeu{font-size:40px; font-weight:900; letter-spacing:1px; margin:2px 0}
+  .titreJeu span{background:linear-gradient(180deg,#ffe27a,#ffb454); -webkit-background-clip:text; background-clip:text; color:transparent}
+  .tagline{color:#c9c4f0; font-size:13px; margin:0 0 14px}
+  .choixLigne{display:flex; align-items:center; justify-content:space-between; gap:10px; margin:9px 0}
+  .choixLigne>span{font-weight:800; font-size:13px; color:#c9c4f0; white-space:nowrap}
+  .pills{display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end}
+  .pill{background:#2c2857; color:#cdd3f0; border:2px solid transparent; border-radius:999px; padding:7px 12px; font-weight:800; font-size:13px}
+  .pill.actif{background:linear-gradient(180deg,#9b8dff,#7a6bff); color:#fff; border-color:#c9c0ff; box-shadow:0 4px 0 rgba(0,0,0,.25)}
+  .lienOptions{width:100%; background:transparent; color:#9aa3c7; border:none; font-weight:800; font-size:13px; padding:10px 0 4px}
+  .optbloc{display:flex; flex-direction:column; gap:6px; margin-bottom:6px}
+  .opt{background:#12112a; color:#d7dcf3; border:none; border-radius:10px; padding:10px; font-weight:700; font-size:13px; text-align:left}
+  .opt.actif{background:#16301f; color:#9ff0c2}
+  .jouer{width:100%; margin-top:12px; background:linear-gradient(180deg,#4be08a,#22c26b); color:#04351d; border:none; border-radius:16px; padding:16px; font-weight:900; font-size:20px; letter-spacing:1px; box-shadow:0 6px 0 #128a49}
+  .jouer:active{transform:translateY(3px); box-shadow:0 3px 0 #128a49}
+  .tuiles{display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:8px; margin-top:14px}
+  .tuile{display:flex; flex-direction:column; align-items:center; gap:3px; border:none; border-radius:14px; padding:10px 4px; font-weight:800; font-size:11px; color:#fff; box-shadow:0 4px 0 rgba(0,0,0,.28)}
+  .tuile .ic{font-size:22px}
+  .tuile.t1{background:#e0723a}.tuile.t2{background:#7a6bff}.tuile.t3{background:#2ea6ff}.tuile.t4{background:#35d07f}
+  .tuile:active{transform:translateY(2px); box-shadow:0 2px 0 rgba(0,0,0,.28)}
+  /* Menu : thème clair pastel jaune */
+  .panneau.menu{background:linear-gradient(180deg,#fef3b8,#ffe89a); border:2px solid #ffd75e; color:#4a3a10}
+  .panneau.menu .titreJeu{color:#c9741a}
+  .panneau.menu .titreJeu span{background:linear-gradient(180deg,#f0902a,#d8641a); -webkit-background-clip:text; background-clip:text; color:transparent}
+  .panneau.menu .tagline{color:#8a6f24}
+  .panneau.menu .choixLigne>span{color:#5a4a18}
+  .panneau.menu .pill{background:#fff4cf; color:#7a5f1e; border:2px solid #f0d98a}
+  .panneau.menu .pill.actif{background:linear-gradient(180deg,#ffb454,#f5942a); color:#fff; border-color:#ffcf7a}
+  .panneau.menu .lienOptions{color:#8a7030}
+  .panneau.menu .opt{background:#fff6da; color:#5a4a18}
+  .panneau.menu .opt.actif{background:#e6f3d8; color:#2f6a1f}
+  /* Menu plein écran (fond jaune pastel occupant tout l'écran) */
+  #overlay.menuPlein{background:linear-gradient(180deg,#fef3b8,#ffe89a); padding:0; align-items:stretch; backdrop-filter:none}
+  #overlay.menuPlein .panneau.menu{width:100%; max-width:520px; margin:0 auto; min-height:100dvh; border:none; border-radius:0; box-shadow:none; background:transparent; display:flex; flex-direction:column; justify-content:center; padding:26px 24px; overflow-y:auto}
+  /* Tutoriel plein écran (thème clair, sur le fond jaune du menu) */
+  #overlay.menuPlein .panneau.tuto{width:100%; max-width:460px; margin:0 auto; min-height:100dvh; border:none; border-radius:0; box-shadow:none; background:transparent; display:flex; flex-direction:column; justify-content:center; padding:26px 24px; overflow-y:auto; text-align:center}
+  #overlay.menuPlein .panneau.tuto h2{color:#c9741a}
+  #overlay.menuPlein .panneau.tuto p{color:#5a4a18; font-size:15px}
+  #overlay.menuPlein .panneau.tuto p b{color:#3a2f0e}
+
+  .miniBtn{background:#7a6bff; color:#fff; border:none; border-radius:9px; padding:7px 13px; font-weight:800; font-size:13px}
+  .panneau h3{font-size:15px}
+  .familles{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:6px}
+  .famBtn{border:none; border-radius:14px; padding:16px; font-weight:800; font-size:16px; color:#1a1330}
+  #toast{position:fixed; left:50%; bottom:96px; transform:translateX(-50%);
+    background:#000a; color:#fff; padding:10px 16px; border-radius:12px; font-weight:700;
+    font-size:14px; opacity:0; transition:opacity .2s; pointer-events:none; z-index:20}
+</style>
+</head>
+<body>
+  <div id="app">
+    <div id="topbar">
+      <div class="titre">🃏 <b>ZELEM</b></div>
+      <div id="hud">🪙 <b id="hudPieces">0</b> · Niv <b id="hudNiveau">1</b></div>
+      <div style="display:flex; gap:8px">
+        <button id="btnSon">🔊</button>
+        <button id="btnMenu">Menu</button>
+      </div>
+    </div>
+    <canvas id="table"></canvas>
+    <div id="actions">
+      <button id="btnPioche" style="display:none">Piocher</button>
+      <button id="btnGarder" style="display:none">Garder</button>
+      <button id="btnSparko" style="display:none">⚡ Zelem !</button>
+    </div>
+  </div>
+  <div id="overlay"></div>
+  <div id="toast"></div>
+
+  <script>/* ============================================================================
+ *  SPARKO — MOTEUR DE RÈGLES (engine.js)
+ *  ----------------------------------------------------------------------------
+ *  Rôle : gérer TOUTES les règles du jeu, SANS aucun affichage.
+ *  Ce module ne connaît ni le Canvas, ni les sons, ni les boutons.
+ *  Il expose un petit "automate" : on lui donne un état + une action,
+ *  il renvoie le nouvel état. C'est ce qui rendra plus tard possibles
+ *  l'IA (qui ne voit que l'état public) et le multijoueur (un serveur
+ *  pourra rejouer exactement les mêmes règles).
+ *
+ *  Principes :
+ *   - DÉTERMINISTE : à graine (seed) égale, la partie se déroule à l'identique
+ *     (indispensable pour le Défi du jour et le débogage).
+ *   - PUR : applyAction() ne touche pas au monde extérieur, il renvoie un état.
+ *   - TESTABLE : tout est vérifiable sans interface (voir moteur-test.html).
+ *
+ *  Compatible navigateur (window.SparkoEngine) ET Node.js (module.exports).
+ * ========================================================================== */
+
+(function (root) {
+  'use strict';
+
+  /* --------------------------------------------------------------------------
+   *  1) GÉNÉRATEUR ALÉATOIRE À GRAINE (RNG seedable)
+   *     mulberry32 : rapide, déterministe, suffisant pour un jeu de cartes.
+   * ------------------------------------------------------------------------ */
+  function creerRng(graine) {
+    let a = graine >>> 0;
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  // Mélange de Fisher–Yates, en utilisant le rng fourni (déterministe).
+  function melanger(tableau, rng) {
+    const t = tableau.slice();
+    for (let i = t.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      [t[i], t[j]] = [t[j], t[i]];
+    }
+    return t;
+  }
+
+  /* --------------------------------------------------------------------------
+   *  2) DÉFINITION DES CARTES
+   * ------------------------------------------------------------------------ */
+  const FAMILLES = ['braise', 'onde', 'eclair', 'seve'];
+
+  // Types de cartes (kind) :
+  //  number  : 0..9 (matche par famille OU par valeur)
+  //  skip    : Court-circuit ⏭️  (saute le suivant)
+  //  reverse : Reflux 🔄        (inverse le sens)
+  //  draw2   : Surcharge ➕2
+  //  wild    : Prisme 🌈        (joker : choisit la famille)
+  //  wild4   : Prisme +4 🌈➕4
+  //  --- cartes originales (optionnelles) ---
+  //  mirror  : Miroir 🪞   shield : Bouclier 🛡️
+  //  magnet  : Aimant 🧲   exchange : Échange 🔁   chaos : Chaos 🎲
+  const SANS_FAMILLE = ['wild', 'wild4', 'chaos']; // jouables partout
+
+  // Valeur de points pour le décompte de fin de manche (§7 du GDD).
+  function pointsCarte(c) {
+    if (c.kind === 'number') return c.value;
+    if (c.kind === 'skip' || c.kind === 'reverse' || c.kind === 'draw2') return 20;
+    if (c.kind === 'wild' || c.kind === 'wild4') return 40;
+    return 30; // mirror / shield / magnet / exchange / chaos
+  }
+
+  /* --------------------------------------------------------------------------
+   *  3) CONSTRUCTION DU PAQUET
+   *     Paquet de base = 108 cartes (clean, façon jeu de 8 américain étendu).
+   *     Par famille : un 0, deux de chaque 1..9, deux skip, deux reverse,
+   *     deux draw2  => 25 cartes ; ×4 = 100. + 4 Prisme + 4 Prisme+4 = 108.
+   *     Cartes originales ajoutées seulement si les variantes le demandent.
+   * ------------------------------------------------------------------------ */
+  function construirePaquet(config) {
+    const cartes = [];
+    let id = 0;
+    const ajouter = (kind, family, value) => {
+      cartes.push({ id: 'c' + (id++), kind, family: family || null, value: (value ?? null) });
+    };
+
+    for (const f of FAMILLES) {
+      ajouter('number', f, 0);                 // un seul 0
+      for (let v = 1; v <= 9; v++) { ajouter('number', f, v); ajouter('number', f, v); }
+      ajouter('skip', f); ajouter('skip', f);
+      ajouter('reverse', f); ajouter('reverse', f);
+      ajouter('draw2', f); ajouter('draw2', f);
+    }
+    for (let k = 0; k < 4; k++) ajouter('wild');
+    for (let k = 0; k < 4; k++) ajouter('wild4');
+
+    // Cartes originales (optionnelles).
+    if (config.variantOriginals) {
+      for (const f of FAMILLES) { ajouter('mirror', f); ajouter('shield', f); ajouter('magnet', f); ajouter('exchange', f); }
+    }
+    if (config.variantChaos) {
+      for (let k = 0; k < 4; k++) ajouter('chaos');
+    }
+    return cartes;
+  }
+
+  /* --------------------------------------------------------------------------
+   *  4) CONFIGURATION PAR DÉFAUT (le "réglage d'usine" validé)
+   * ------------------------------------------------------------------------ */
+  function configParDefaut(over) {
+    const base = {
+      numPlayers: 2,
+      startHand: 7,
+      seed: 12345,
+      scoreMode: false,   // false = victoire simple (1re main vide) ; true = au score
+      scoreTarget: 300,
+      // --- variantes ALLUMÉES d'office ---
+      variantStacking: true,   // empiler +2/+4
+      variantReverse: true,    // changement de sens
+      variantSkip: true,       // saut de tour
+      // --- variantes éteintes par défaut ---
+      variantMulti: false,        // jouer plusieurs cartes identiques
+      variantForcedDraw: false,   // pioche obligatoire (pioche + passe)
+      variantDrawUntil: false,    // pioche jusqu'à pouvoir jouer
+      variantWild8: false,        // huit sauvage (le 8 devient joker)
+      variantOriginals: false,    // Miroir/Bouclier/Aimant/Échange
+      variantChaos: false,        // carte Chaos (effet aléatoire)
+      variant70: false,           // règle 7 & 0
+      variantJumpIn: false,       // riposte instantanée
+      variantCleanFinish: false,  // interdit de finir sur une carte d'attaque
+      autoAnnounce: false,        // annonce "Sparko !" automatique (accessibilité)
+    };
+    return Object.assign(base, over || {});
+  }
+
+  /* --------------------------------------------------------------------------
+   *  5) DÉMARRAGE D'UNE PARTIE
+   * ------------------------------------------------------------------------ */
+  function creerPartie(configOver) {
+    const config = configParDefaut(configOver);
+    const rng = creerRng(config.seed);
+
+    // Registre des cartes (id -> carte) pour un accès O(1).
+    const paquet = melanger(construirePaquet(config), rng);
+    const registre = {};
+    for (const c of paquet) registre[c.id] = c;
+
+    // Joueurs.
+    const players = [];
+    for (let i = 0; i < config.numPlayers; i++) {
+      players.push({ id: 'p' + i, name: 'Joueur ' + (i + 1), hand: [], saidSparko: false, hasShield: false });
+    }
+
+    // Distribution.
+    let pioche = paquet.map((c) => c.id);
+    for (let n = 0; n < config.startHand; n++) {
+      for (const pl of players) pl.hand.push(pioche.shift());
+    }
+
+    // Première carte de la défausse : on évite de commencer sur une carte
+    // spéciale (règle simple du GDD) — on remet dessous et on retire au-dessus.
+    let premiere = pioche.shift();
+    while (registre[premiere].kind !== 'number') {
+      pioche.push(premiere);
+      premiere = pioche.shift();
+    }
+    const defausse = [premiere];
+    const pc = registre[premiere];
+
+    const state = {
+      config, registre,
+      rngSeed: config.seed, rngCalls: 0, // on rejoue le rng de façon reproductible
+      players,
+      pioche,
+      defausse,
+      activeFamily: pc.family,
+      activeValue: pc.value,   // pour matcher les numéros
+      activeKind: 'number',    // pour matcher les cartes spéciales de même type
+      current: 0,
+      direction: 1,            // 1 = sens horaire, -1 = anti-horaire
+      pendingDraw: 0,          // cumul +2/+4 en attente
+      pendingType: null,       // 'draw2' | 'draw4'
+      awaitingPostDraw: null,  // {cardId} : carte juste piochée, décision à prendre
+      dernierUn: null,         // index du joueur tombé à 1 carte (fenêtre d'annonce)
+      annonceOuverte: false,   // vrai tant qu'on peut le/la surprendre
+      phase: 'playing',        // 'playing' | 'roundOver' | 'gameOver'
+      winner: null,
+      scores: Object.fromEntries(players.map((p) => [p.id, 0])),
+      log: [],
+    };
+    logLine(state, 'Distribution : ' + config.startHand + ' cartes. Carte de départ = ' + decrire(pc) + '.');
+    return state;
+  }
+
+  // Un rng "reproductible" attaché à l'état (rejoue depuis la graine).
+  function rngDe(state) {
+    const r = creerRng(state.rngSeed);
+    for (let i = 0; i < state.rngCalls; i++) r();
+    return function () { state.rngCalls++; return r(); };
+  }
+
+  /* --------------------------------------------------------------------------
+   *  6) OUTILS DE LECTURE DE L'ÉTAT
+   * ------------------------------------------------------------------------ */
+  const carte = (state, id) => state.registre[id];
+  const joueurCourant = (state) => state.players[state.current];
+  const dessus = (state) => carte(state, state.defausse[state.defausse.length - 1]);
+
+  function decrire(c) {
+    const fam = c.family ? ({ braise: '🔥', onde: '💧', eclair: '💨', seve: '⛰️' }[c.family]) : '🌈';
+    const nom = {
+      number: String(c.value), skip: '⏭️', reverse: '🔄', draw2: '➕2',
+      wild: 'Prisme', wild4: 'Prisme+4', mirror: '🪞', shield: '🛡️',
+      magnet: '🧲', exchange: '🔁', chaos: '🎲',
+    }[c.kind];
+    return fam + ' ' + nom;
+  }
+  function logLine(state, txt) { state.log.push(txt); if (state.log.length > 200) state.log.shift(); }
+
+  /* --------------------------------------------------------------------------
+   *  7) CARTE JOUABLE ? (cœur du matching)
+   *     Une carte est jouable si : joker (wild/wild4/chaos), OU même famille
+   *     que la famille active, OU même "symbole" (valeur pour un numéro,
+   *     type pour une spéciale) que la carte active.
+   *     Cas particulier : quand une attaque +2/+4 est en attente, les coups
+   *     légaux sont restreints (voir coupsLegaux()).
+   * ------------------------------------------------------------------------ */
+  function estCompatible(state, c) {
+    if (SANS_FAMILLE.includes(c.kind)) return true;         // jokers : toujours
+    if (state.config.variantWild8 && c.kind === 'number' && c.value === 8) return true; // huit sauvage
+    if (c.family === state.activeFamily) return true;       // même famille
+    if (state.activeKind === 'number') {                    // dessus = numéro
+      return c.kind === 'number' && c.value === state.activeValue;
+    }
+    return c.kind === state.activeKind;                     // même type de spéciale
+  }
+
+  /* --------------------------------------------------------------------------
+   *  8) LISTE DES ACTIONS LÉGALES pour le joueur courant, MAINTENANT.
+   *     Types d'action :
+   *       {type:'play', cardId, chosenFamily?}   poser une carte
+   *       {type:'draw'}                          piocher (selon variantes)
+   *       {type:'playDrawn', cardId, chosenFamily?}  jouer la carte piochée
+   *       {type:'pass'}                          passer après avoir pioché
+   *     (L'annonce "Sparko !" est gérée à part : action {type:'announce'}.)
+   * ------------------------------------------------------------------------ */
+  function coupsLegaux(state) {
+    if (state.phase !== 'playing') return [];
+    const pl = joueurCourant(state);
+    const actions = [];
+
+    // Sous-phase : une carte vient d'être piochée, on décide de la jouer ou non.
+    if (state.awaitingPostDraw) {
+      const c = carte(state, state.awaitingPostDraw.cardId);
+      if (estCompatible(state, c)) pousserPlay(state, c, actions, 'playDrawn');
+      actions.push({ type: 'pass' });
+      return actions;
+    }
+
+    // Cas d'une attaque +2/+4 en attente : réponses restreintes.
+    if (state.pendingDraw > 0) {
+      if (state.config.variantStacking) {
+        for (const id of pl.hand) {
+          const c = carte(state, id);
+          const peutEmpiler =
+            (state.pendingType === 'draw2' && (c.kind === 'draw2' || c.kind === 'wild4')) ||
+            (state.pendingType === 'draw4' && c.kind === 'wild4');
+          if (peutEmpiler) pousserPlay(state, c, actions, 'play');
+          if (state.config.variantOriginals && (c.kind === 'shield' || c.kind === 'mirror')) {
+            pousserPlay(state, c, actions, 'play'); // défenses jouables en réponse
+          }
+        }
+      } else if (state.config.variantOriginals) {
+        for (const id of pl.hand) {
+          const c = carte(state, id);
+          if (c.kind === 'shield' || c.kind === 'mirror') pousserPlay(state, c, actions, 'play');
+        }
+      }
+      // Toujours l'option d'encaisser la pile en piochant.
+      actions.push({ type: 'draw' });
+      return actions;
+    }
+
+    // Tour normal : toutes les cartes compatibles de la main.
+    for (const id of pl.hand) {
+      const c = carte(state, id);
+      if (estCompatible(state, c)) pousserPlay(state, c, actions, 'play');
+    }
+    actions.push({ type: 'draw' });
+    return actions;
+  }
+
+  // Ajoute une (ou plusieurs) action(s) "play" pour une carte, en gérant le
+  // choix de famille pour les jokers.
+  function pousserPlay(state, c, actions, type) {
+    // Interdit de finir sur une carte d'attaque si "Fin propre" est active.
+    if (state.config.variantCleanFinish) {
+      const pl = joueurCourant(state);
+      const finirait = pl.hand.length === 1 && (type === 'play') ||
+                       (type === 'playDrawn' && pl.hand.length === 0);
+      const estAttaque = ['skip', 'reverse', 'draw2', 'wild4'].includes(c.kind);
+      if (finirait && estAttaque) return; // ce coup ne conclut pas proprement
+    }
+    if (c.kind === 'wild' || c.kind === 'wild4') {
+      for (const f of FAMILLES) actions.push({ type, cardId: c.id, chosenFamily: f });
+    } else {
+      actions.push({ type, cardId: c.id });
+    }
+  }
+
+  /* --------------------------------------------------------------------------
+   *  9) APPLIQUER UNE ACTION -> renvoie le NOUVEL état.
+   *     (On mute une copie légère puis on renvoie ; l'appelant remplace son
+   *      état par le retour. Simple et sûr pour l'usage prévu.)
+   * ------------------------------------------------------------------------ */
+  function appliquer(state, action) {
+    if (state.phase !== 'playing') return state;
+    switch (action.type) {
+      case 'play':      return jouerCarte(state, action, false);
+      case 'playDrawn': return jouerCarte(state, action, true);
+      case 'draw':      return piocher(state, action);
+      case 'pass':      return passerApresPioche(state);
+      case 'announce':  return annoncer(state, action);
+      case 'catch':     return surprendre(state, action);
+      default:          return state;
+    }
+  }
+
+  // --- Poser une carte ------------------------------------------------------
+  function jouerCarte(state, action, depuisPioche) {
+    const pl = joueurCourant(state);
+    const idxJoueur = state.current; // index du joueur qui pose (avant l'avance de tour)
+    const c = carte(state, action.cardId);
+
+    // Sécurité : vérifier la légalité (l'engine ne fait jamais confiance à l'UI).
+    const legal = coupsLegaux(state).some(
+      (a) => (a.type === (depuisPioche ? 'playDrawn' : 'play')) &&
+             a.cardId === action.cardId &&
+             (a.chosenFamily === action.chosenFamily || a.chosenFamily === undefined)
+    );
+    if (!legal) { logLine(state, '⚠️ Coup illégal ignoré : ' + decrire(c)); return state; }
+
+    // Retirer la carte de la main, la poser sur la défausse.
+    pl.hand.splice(pl.hand.indexOf(c.id), 1);
+    state.defausse.push(c.id);
+    state.awaitingPostDraw = null;
+
+    // Mettre à jour la "cible" active (famille / valeur / type).
+    if (c.kind === 'wild' || c.kind === 'wild4' || c.kind === 'chaos') {
+      state.activeFamily = action.chosenFamily || choisirFamilleAuto(state, pl);
+      state.activeKind = 'joker';
+      state.activeValue = null;
+    } else {
+      state.activeFamily = c.family;
+      state.activeKind = (c.kind === 'number') ? 'number' : c.kind;
+      state.activeValue = (c.kind === 'number') ? c.value : null;
+    }
+    logLine(state, pl.name + ' joue ' + decrire(c) + '.');
+
+    // Victoire ? (main vide)
+    if (pl.hand.length === 0) return finDeManche(state, pl);
+
+    // Suivi de l'annonce "Sparko !" quand il reste 1 carte, rattaché à CE joueur.
+    if (pl.hand.length === 1) {
+      if (state.config.autoAnnounce) { pl.saidSparko = true; state.dernierUn = null; state.annonceOuverte = false; }
+      else { pl.saidSparko = false; state.dernierUn = idxJoueur; state.annonceOuverte = true; }
+    } else {
+      pl.saidSparko = false;
+      if (state.dernierUn === idxJoueur) { state.dernierUn = null; state.annonceOuverte = false; }
+    }
+
+    // Appliquer l'effet de la carte, qui décide aussi de "à qui le tour".
+    return appliquerEffet(state, c);
+  }
+
+  // Choix de famille pour l'IA basique quand aucun n'est fourni : la couleur
+  // la plus présente dans la main.
+  function choisirFamilleAuto(state, pl) {
+    const compte = { braise: 0, onde: 0, eclair: 0, seve: 0 };
+    for (const id of pl.hand) { const f = carte(state, id).family; if (f) compte[f]++; }
+    return FAMILLES.reduce((a, b) => (compte[b] > compte[a] ? b : a), 'braise');
+  }
+
+  // --- Effets ---------------------------------------------------------------
+  function appliquerEffet(state, c) {
+    switch (c.kind) {
+      case 'number':
+        return finDeTour(state, 1);
+
+      case 'skip':
+        if (!state.config.variantSkip) return finDeTour(state, 1);
+        logLine(state, '⏭️ Le joueur suivant est sauté.');
+        return finDeTour(state, 2); // on saute une place
+
+      case 'reverse':
+        if (!state.config.variantReverse) return finDeTour(state, 1);
+        state.direction *= -1;
+        logLine(state, '🔄 Changement de sens.');
+        // À 2 joueurs, le Reflux agit comme un saut (le joueur rejoue).
+        if (state.players.length === 2) return finDeTour(state, 2);
+        return finDeTour(state, 1);
+
+      case 'draw2':
+        state.pendingDraw += 2; state.pendingType = 'draw2';
+        logLine(state, '➕2 (cumul ' + state.pendingDraw + ').');
+        return resoudreAttaque(state);
+
+      case 'wild':
+        logLine(state, '🌈 Famille imposée : ' + state.activeFamily + '.');
+        return finDeTour(state, 1);
+
+      case 'wild4':
+        state.pendingDraw += 4; state.pendingType = 'draw4';
+        logLine(state, '🌈➕4 (cumul ' + state.pendingDraw + '), famille : ' + state.activeFamily + '.');
+        return resoudreAttaque(state);
+
+      /* ---- cartes originales (optionnelles) ---- */
+      case 'mirror': {   // renverse le sens + relance une éventuelle attaque
+        state.direction *= -1;
+        logLine(state, '🪞 Miroir : le sens s\'inverse.');
+        if (state.pendingDraw > 0) return resoudreAttaque(state);
+        return finDeTour(state, 1);
+      }
+      case 'shield': {   // annule l'attaque en attente (défense)
+        state.pendingDraw = 0; state.pendingType = null;
+        joueurCourant(state).hasShield = true;
+        logLine(state, '🛡️ Bouclier : attaque annulée.');
+        return finDeTour(state, 1);
+      }
+      case 'magnet': {   // vole 1 carte au hasard au joueur suivant
+        const suivant = state.players[indexSuivant(state, 1)];
+        if (suivant.hand.length > 0) {
+          const r = rngDe(state);
+          const k = Math.floor(r() * suivant.hand.length);
+          const volee = suivant.hand.splice(k, 1)[0];
+          joueurCourant(state).hand.push(volee);
+          logLine(state, '🧲 Aimant : 1 carte volée au suivant.');
+        }
+        return finDeTour(state, 1);
+      }
+      case 'exchange': { // échange la main avec le joueur suivant
+        const moi = joueurCourant(state);
+        const suivant = state.players[indexSuivant(state, 1)];
+        [moi.hand, suivant.hand] = [suivant.hand, moi.hand];
+        logLine(state, '🔁 Échange des mains avec le suivant.');
+        return finDeTour(state, 1);
+      }
+      case 'chaos': {    // effet aléatoire doux
+        return effetChaos(state);
+      }
+      default:
+        return finDeTour(state, 1);
+    }
+  }
+
+  // Résolution d'une attaque +2/+4 : si l'empilement est désactivé, la cible
+  // encaisse tout de suite. Sinon, on passe la main à la cible qui pourra
+  // contrer ou encaisser (géré par coupsLegaux()).
+  function resoudreAttaque(state) {
+    if (!state.config.variantStacking) {
+      const cible = state.players[indexSuivant(state, 1)];
+      donnerCartes(state, cible, state.pendingDraw);
+      logLine(state, cible.name + ' pioche ' + state.pendingDraw + '.');
+      state.pendingDraw = 0; state.pendingType = null;
+      return finDeTour(state, 2); // la cible a "consommé" son tour à piocher
+    }
+    return finDeTour(state, 1); // l'empilement se joue au tour suivant
+  }
+
+  // Table d'effets doux pour la carte Chaos.
+  function effetChaos(state) {
+    const r = rngDe(state);
+    const tirage = Math.floor(r() * 4);
+    if (tirage === 0) {
+      for (const p of state.players) donnerCartes(state, p, 1);
+      logLine(state, '🎲 Chaos : tout le monde pioche 1.');
+    } else if (tirage === 1) {
+      state.activeFamily = FAMILLES[Math.floor(r() * 4)];
+      logLine(state, '🎲 Chaos : la famille devient ' + state.activeFamily + '.');
+    } else if (tirage === 2) {
+      // rotation des mains dans le sens du jeu
+      const mains = state.players.map((p) => p.hand);
+      const dir = state.direction;
+      const n = state.players.length;
+      for (let i = 0; i < n; i++) state.players[(i + dir + n) % n].hand = mains[i];
+      logLine(state, '🎲 Chaos : rotation générale des mains.');
+    } else {
+      donnerCartes(state, state.players[indexSuivant(state, 1)], 1);
+      logLine(state, '🎲 Chaos : le suivant pioche 1.');
+    }
+    return finDeTour(state, 1);
+  }
+
+  // --- Piocher --------------------------------------------------------------
+  function piocher(state, action) {
+    const pl = joueurCourant(state);
+
+    // Cas 1 : encaisser une attaque +2/+4.
+    if (state.pendingDraw > 0) {
+      donnerCartes(state, pl, state.pendingDraw);
+      logLine(state, pl.name + ' encaisse et pioche ' + state.pendingDraw + '.');
+      state.pendingDraw = 0; state.pendingType = null;
+      return finDeTour(state, 1);
+    }
+
+    // Cas 2 : pioche normale.
+    if (state.config.variantDrawUntil) {
+      // Pioche jusqu'à obtenir une carte jouable.
+      let derniere = null;
+      let garde = 0;
+      do {
+        derniere = tirerUne(state, pl);
+        garde++;
+      } while (derniere && !estCompatible(state, carte(state, derniere)) && garde < 200);
+      if (derniere && estCompatible(state, carte(state, derniere))) {
+        state.awaitingPostDraw = { cardId: derniere };
+        logLine(state, pl.name + ' pioche jusqu\'à pouvoir jouer.');
+        return state;
+      }
+      logLine(state, pl.name + ' pioche mais ne peut pas jouer.');
+      return finDeTour(state, 1);
+    }
+
+    // Pioche d'1 carte.
+    const idPiochee = tirerUne(state, pl);
+    if (idPiochee && !state.config.variantForcedDraw && estCompatible(state, carte(state, idPiochee))) {
+      // Le joueur PEUT jouer la carte piochée (décision suivante).
+      state.awaitingPostDraw = { cardId: idPiochee };
+      logLine(state, pl.name + ' pioche 1 carte (jouable).');
+      return state;
+    }
+    logLine(state, pl.name + ' pioche 1 carte' + (state.config.variantForcedDraw ? ' (pioche obligatoire).' : '.'));
+    return finDeTour(state, 1);
+  }
+
+  // Passer après avoir pioché (choisir de ne pas jouer la carte piochée).
+  function passerApresPioche(state) {
+    state.awaitingPostDraw = null;
+    return finDeTour(state, 1);
+  }
+
+  // --- Annonce "Sparko !" (rattachée au joueur qui vient de tomber à 1 carte)
+  function annoncer(state, action) {
+    const idx = (action && action.playerIndex != null) ? action.playerIndex : state.dernierUn;
+    if (idx == null) return state;
+    const pl = state.players[idx];
+    if (pl && pl.hand.length === 1 && !pl.saidSparko) {
+      pl.saidSparko = true; state.annonceOuverte = false;
+      logLine(state, pl.name + ' annonce « Sparko ! »');
+    }
+    return state;
+  }
+
+  // --- Surprendre un joueur qui a oublié d'annoncer "Sparko !" (+2 cartes) ---
+  function surprendre(state) {
+    if (!state.annonceOuverte || state.dernierUn == null) return state;
+    const cible = state.players[state.dernierUn];
+    if (cible && cible.hand.length === 1 && !cible.saidSparko) {
+      donnerCartes(state, cible, 2);
+      logLine(state, cible.name + ' est surpris·e sans annonce : +2 cartes.');
+    }
+    state.annonceOuverte = false; state.dernierUn = null;
+    return state;
+  }
+
+  /* --------------------------------------------------------------------------
+   *  10) UTILITAIRES DE FLUX (pioche, distribution, avance de tour)
+   * ------------------------------------------------------------------------ */
+  function tirerUne(state, pl) {
+    if (state.pioche.length === 0) remelanger(state);
+    if (state.pioche.length === 0) return null; // plus aucune carte disponible
+    const id = state.pioche.shift();
+    pl.hand.push(id);
+    return id;
+  }
+  function donnerCartes(state, pl, n) { for (let i = 0; i < n; i++) tirerUne(state, pl); }
+
+  // Reforme la pioche à partir de la défausse (on garde la carte active dessus).
+  function remelanger(state) {
+    if (state.defausse.length <= 1) return;
+    const active = state.defausse.pop();
+    const r = rngDe(state);
+    state.pioche = melanger(state.defausse, r);
+    state.defausse = [active];
+    logLine(state, '♻️ La pioche est reformée à partir de la défausse.');
+  }
+
+  function indexSuivant(state, pas) {
+    const n = state.players.length;
+    return ((state.current + state.direction * pas) % n + n) % n;
+  }
+
+  // Avance le tour de `pas` positions dans le sens courant, puis vérifie les
+  // blocages éventuels.
+  function finDeTour(state, pas) {
+    state.current = indexSuivant(state, pas);
+    return verifierBlocage(state);
+  }
+
+  /* --------------------------------------------------------------------------
+   *  11) DÉTECTION DE PARTIE BLOQUÉE
+   *     Si personne ne peut jouer et la pioche est épuisée, la manche s'arrête
+   *     (le joueur avec le moins de points l'emporte).
+   * ------------------------------------------------------------------------ */
+  function verifierBlocage(state) {
+    if (state.pioche.length > 0) return state; // on peut toujours piocher
+    // Reformer la pioche si possible.
+    if (state.defausse.length > 1) return state;
+    // Sinon : quelqu'un peut-il jouer ?
+    const sauvegarde = state.current;
+    let quelquUnPeut = false;
+    for (let i = 0; i < state.players.length; i++) {
+      state.current = i;
+      if (coupsLegaux(state).some((a) => a.type !== 'draw')) { quelquUnPeut = true; break; }
+    }
+    state.current = sauvegarde;
+    if (!quelquUnPeut) {
+      // Manche bloquée : le joueur avec la plus petite main "gagne".
+      let best = state.players[0];
+      for (const p of state.players) if (p.hand.length < best.hand.length) best = p;
+      logLine(state, '⛔ Partie bloquée. ' + best.name + ' a le moins de cartes.');
+      return finDeManche(state, best);
+    }
+    return state;
+  }
+
+  /* --------------------------------------------------------------------------
+   *  12) FIN DE MANCHE / DE PARTIE + SCORE
+   * ------------------------------------------------------------------------ */
+  function finDeManche(state, gagnant) {
+    // Décompte des points des mains adverses (§7 du GDD).
+    let total = 0;
+    for (const p of state.players) {
+      if (p === gagnant) continue;
+      for (const id of p.hand) total += pointsCarte(carte(state, id));
+    }
+    state.scores[gagnant.id] += total;
+    logLine(state, '🏆 ' + gagnant.name + ' remporte la manche (+' + total + ' pts).');
+
+    if (state.config.scoreMode && state.scores[gagnant.id] < state.config.scoreTarget) {
+      state.phase = 'roundOver';           // il faudra relancer une manche
+      state.winner = null;
+      state.roundWinner = gagnant.id;
+    } else {
+      state.phase = 'gameOver';
+      state.winner = gagnant.id;
+      logLine(state, '🎉 ' + gagnant.name + ' gagne la partie !');
+    }
+    return state;
+  }
+
+  /* --------------------------------------------------------------------------
+   *  13) VUE PUBLIQUE (ce qu'une IA / un client a le DROIT de voir)
+   *     Aucune main adverse : juste le nombre de cartes. C'est ce qui garantit
+   *     une IA honnête (elle ne triche pas) et prépare le multijoueur.
+   * ------------------------------------------------------------------------ */
+  function vuePublique(state, pourJoueurIndex) {
+    return {
+      moi: pourJoueurIndex,
+      maMain: state.players[pourJoueurIndex].hand.map((id) => Object.assign({}, carte(state, id))),
+      adversaires: state.players.map((p, i) => ({ id: p.id, nbCartes: p.hand.length, courant: i === state.current })),
+      active: { family: state.activeFamily, value: state.activeValue, kind: state.activeKind, carte: Object.assign({}, dessus(state)) },
+      direction: state.direction,
+      pendingDraw: state.pendingDraw,
+      pendingType: state.pendingType,
+      taillePioche: state.pioche.length,
+      current: state.current,
+      annonceOuverte: state.annonceOuverte,   // un joueur est-il "surprenable" ?
+      dernierUn: state.dernierUn,             // qui (index) a 1 carte sans annoncer
+      awaitingPostDraw: state.awaitingPostDraw ? Object.assign({}, carte(state, state.awaitingPostDraw.cardId)) : null,
+      phase: state.phase,
+      winner: state.winner,
+    };
+  }
+
+  /* --------------------------------------------------------------------------
+   *  14) EXPORT
+   * ------------------------------------------------------------------------ */
+  const API = {
+    FAMILLES,
+    creerPartie,
+    coupsLegaux,
+    appliquer,
+    vuePublique,
+    // utilitaires exposés pour les tests / l'UI :
+    carte, dessus, joueurCourant, decrire, estCompatible, pointsCarte, construirePaquet, configParDefaut,
+  };
+
+  if (typeof module !== 'undefined' && module.exports) module.exports = API; // Node
+  root.SparkoEngine = API;                                                   // navigateur
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+  <script>/* ============================================================================
+ *  SPARKO — INTELLIGENCE ARTIFICIELLE (ai.js)
+ *  ----------------------------------------------------------------------------
+ *  4 niveaux, RÉELLEMENT différents :
+ *    1 Débutant  : joue au hasard, gaspille ses jokers, oublie parfois d'annoncer.
+ *    2 Normal    : se débarrasse des grosses cartes, garde ses jokers, choisit
+ *                  la bonne famille, se défend basiquement contre les +2/+4.
+ *    3 Difficile : cible le joueur en tête (skip/+2 quand un adversaire est bas),
+ *                  garde une carte de secours, annonce toujours, peut surprendre.
+ *    4 Expert    : + choix de famille par RARETÉ (comptage des cartes vues),
+ *                  gestion fine de la pile +2/+4, garde une défense en réserve.
+ *
+ *  PRINCIPE ABSOLU : l'IA ne lit JAMAIS la main d'un adversaire — seulement le
+ *  NOMBRE de cartes de chacun (via l'état public). Pas de triche.
+ *
+ *  Dépend de engine.js (window.SparkoEngine). Compatible navigateur + Node.
+ * ========================================================================== */
+
+(function (root) {
+  'use strict';
+  const E = (typeof module !== 'undefined' && module.exports) ? require('./engine.js') : root.SparkoEngine;
+
+  const NIVEAUX = { DEBUTANT: 1, NORMAL: 2, DIFFICILE: 3, EXPERT: 4 };
+  const FAMILLES = ['braise', 'onde', 'eclair', 'seve'];
+
+  /* --------------------------------------------------------------------------
+   *  Mémoire d'une IA : petit rng déterministe + comptage des cartes vues
+   *  (pour l'estimation de rareté de l'Expert). Une mémoire par joueur IA.
+   * ------------------------------------------------------------------------ */
+  function creerMemoire(seed, playerIndex) {
+    let a = ((seed || 1) ^ ((playerIndex + 1) * 0x9e3779b9)) >>> 0;
+    const rng = () => { a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+    return {
+      rng,
+      vues: new Set(),                                   // ids de cartes déjà observées
+      seen: { braise: 0, onde: 0, eclair: 0, seve: 0 },  // nb de cartes vues par famille
+    };
+  }
+
+  // Observe l'état visible et met à jour le comptage (carte active + notre main).
+  function observer(state, memoire) {
+    const noter = (c) => {
+      if (!c || !c.id) return;
+      if (memoire.vues.has(c.id)) return;
+      memoire.vues.add(c.id);
+      if (c.family) memoire.seen[c.family]++;
+    };
+    noter(E.dessus(state));
+    for (const id of state.players[state.current].hand) noter(state.registre[id]);
+  }
+
+  /* --------------------------------------------------------------------------
+   *  Contexte de décision (uniquement des infos publiques + ma propre main).
+   * ------------------------------------------------------------------------ */
+  function contexte(state) {
+    const n = state.players.length;
+    const me = state.current;
+    const dir = state.direction;
+    const next = ((me + dir) % n + n) % n;
+    const myHand = state.players[me].hand.map((id) => state.registre[id]);
+    const fam = { braise: 0, onde: 0, eclair: 0, seve: 0 };
+    let wilds = 0, defenses = 0;
+    for (const c of myHand) {
+      if (c.family) fam[c.family]++;
+      if (c.kind === 'wild' || c.kind === 'wild4') wilds++;
+      if (c.kind === 'shield' || c.kind === 'mirror') defenses++;
+    }
+    let minOpp = Infinity, nextCount = state.players[next].hand.length;
+    for (let i = 0; i < n; i++) if (i !== me) minOpp = Math.min(minOpp, state.players[i].hand.length);
+    const dominante = FAMILLES.reduce((x, y) => (fam[y] > fam[x] ? y : x), 'braise');
+    return { n, me, dir, next, myHand, fam, wilds, defenses, minOpp, nextCount, handSize: myHand.length, dominante };
+  }
+
+  const estAttaque = (c) => ['skip', 'reverse', 'draw2', 'wild4'].includes(c.kind);
+  const estJoker = (c) => c.kind === 'wild' || c.kind === 'wild4';
+
+  /* --------------------------------------------------------------------------
+   *  Évaluation d'une action candidate (score : plus c'est haut, mieux c'est).
+   *  Le comportement dépend du niveau. Piocher/passer = tout en bas (uniquement
+   *  si rien d'autre n'est possible).
+   * ------------------------------------------------------------------------ */
+  // La MEILLEURE politique (score fort). `expert` active les raffinements du
+  // niveau 4. Les niveaux inférieurs utilisent EXACTEMENT la même politique,
+  // mais commettent parfois une erreur (voir tauxErreur / choisirCoup) — c'est
+  // la RÉGULARITÉ qui distingue les paliers, méthode fiable pour ce type de jeu.
+  function evaluer(state, action, ctx, memoire, expert) {
+    if (action.type === 'draw' || action.type === 'pass') return -1000;
+    const c = state.registre[action.cardId];
+
+    // Un coup qui VIDE la main est toujours le meilleur.
+    if (ctx.handSize === 1) return 1e6;
+
+    let s = 0;
+    const facePending = state.pendingDraw > 0;
+
+    // Se débarrasser des grosses valeurs (réduit les points en cas de défaite).
+    s += E.pointsCarte(c) * 0.5;
+
+    // --- Défense face à une pile +2/+4 (levier majeur du jeu) ---------------
+    if (facePending) {
+      if (c.kind === 'shield') s += 70;                 // annule toute la pile
+      if (c.kind === 'mirror') s += 55;                 // renvoie la pile
+      if (c.kind === 'draw2') { s += 34; if (ctx.nextCount <= 3) s += 24; }
+      if (c.kind === 'wild4') { s += 30; if (ctx.nextCount <= 3) s += 24; } // un peu moins : c'est un joker
+    }
+
+    // --- Jokers : précieux, on les garde -----------------------------------
+    if (estJoker(c)) {
+      s -= 48;                                          // ne pas gaspiller un joker
+      const fq = ctx.fam[action.chosenFamily] || 0;
+      s += fq * 4;                                      // choisir la famille qu'on a le plus
+      if (expert) s += (memoire.seen[action.chosenFamily] || 0) * 0.6; // rareté (Expert)
+      if (ctx.minOpp <= 2 && c.kind === 'wild4') s += 22; // pression sur un adversaire bas
+    }
+
+    // --- Cartes d'attaque : bonnes quand un adversaire est proche de gagner -
+    if (estAttaque(c) && !estJoker(c)) {
+      if (ctx.nextCount <= 2) s += 32;
+      else if (ctx.minOpp <= 2) s += 12;
+      else s += 5;
+    }
+
+    // --- Garder une carte de secours dans sa couleur dominante -------------
+    if (!estJoker(c) && c.family === ctx.dominante &&
+        ctx.fam[ctx.dominante] === 1 && ctx.handSize > 4) {
+      s -= 10;
+    }
+
+    // --- Raffinements Expert -----------------------------------------------
+    if (expert) {
+      // Garder au moins un joker en réserve si la main est grande.
+      if (estJoker(c) && ctx.wilds === 1 && ctx.handSize > 3 && !facePending) s -= 26;
+      // Fin de partie : à 2 cartes, ne pas brûler son joker (il garantit le coup suivant).
+      if (ctx.handSize === 2 && estJoker(c) && !facePending) s -= 40;
+    }
+    return s;
+  }
+
+  // Taux d'erreur par niveau : proportion de coups joués "au hasard" au lieu du
+  // meilleur. 0 = jeu parfaitement régulier.
+  function tauxErreur(niveau) {
+    if (niveau === NIVEAUX.NORMAL) return 0.45;
+    if (niveau === NIVEAUX.DIFFICILE) return 0.18;
+    return 0.0; // Expert
+  }
+
+  /* --------------------------------------------------------------------------
+   *  Choix du coup pour le joueur courant.
+   * ------------------------------------------------------------------------ */
+  function choisirCoup(state, niveau, memoire) {
+    observer(state, memoire);
+    const coups = E.coupsLegaux(state);
+    if (coups.length === 0) return { type: 'pass' };
+    const jouables = coups.filter((a) => a.type === 'play' || a.type === 'playDrawn');
+
+    // Niveau 1 (Débutant) : purement au hasard parmi les coups jouables.
+    if (niveau === NIVEAUX.DEBUTANT) {
+      if (jouables.length) return jouables[Math.floor(memoire.rng() * jouables.length)];
+      return coups.find((a) => a.type === 'draw') || coups.find((a) => a.type === 'pass') || coups[0];
+    }
+
+    // Niveaux 2-3 : parfois une erreur (coup jouable au hasard).
+    if (jouables.length && memoire.rng() < tauxErreur(niveau)) {
+      return jouables[Math.floor(memoire.rng() * jouables.length)];
+    }
+
+    // Sinon : la meilleure politique.
+    const expert = (niveau === NIVEAUX.EXPERT);
+    const ctx = contexte(state);
+    let best = null, bestScore = -Infinity;
+    for (const a of coups) {
+      const sc = evaluer(state, a, ctx, memoire, expert);
+      if (sc > bestScore) { bestScore = sc; best = a; }
+    }
+    return best || coups[0];
+  }
+
+  /* --------------------------------------------------------------------------
+   *  Jouer un TOUR complet d'IA : (surprise éventuelle) -> coup -> éventuelle
+   *  décision sur la carte piochée -> annonce "Sparko !".
+   *  Renvoie le nouvel état.
+   * ------------------------------------------------------------------------ */
+  function jouerTour(state, niveau, memoire) {
+    // Surprendre un adversaire qui a oublié d'annoncer (Difficile/Expert).
+    if (niveau >= 3 && state.annonceOuverte && state.dernierUn != null && state.dernierUn !== state.current) {
+      state = E.appliquer(state, { type: 'catch' });
+    }
+
+    const idxAvant = state.current;
+    let coup = choisirCoup(state, niveau, memoire);
+    state = E.appliquer(state, coup);
+
+    // Si on vient de piocher une carte jouable, on reprend une décision.
+    let garde = 0;
+    while (state.phase === 'playing' && state.current === idxAvant && state.awaitingPostDraw && garde < 4) {
+      coup = choisirCoup(state, niveau, memoire);
+      state = E.appliquer(state, coup);
+      garde++;
+    }
+
+    // Annonce "Sparko !" si on est tombé à 1 carte (Débutant oublie parfois).
+    if (state.dernierUn === idxAvant && state.players[idxAvant] && !state.players[idxAvant].saidSparko) {
+      const annonce = (niveau >= 2) ? true : (memoire.rng() < 0.65);
+      if (annonce) state = E.appliquer(state, { type: 'announce', playerIndex: idxAvant });
+    }
+    return state;
+  }
+
+  /* --------------------------------------------------------------------------
+   *  EXPORT
+   * ------------------------------------------------------------------------ */
+  const API = { NIVEAUX, creerMemoire, observer, choisirCoup, jouerTour };
+  if (typeof module !== 'undefined' && module.exports) module.exports = API;
+  root.SparkoAI = API;
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+  <script>/* ============================================================================
+ *  SPARKO — MÉTA-JEU (meta.js)
+ *  ----------------------------------------------------------------------------
+ *  Tout ce qui persiste et donne envie de revenir :
+ *    - SAUVEGARDE : profil stocké en localStorage, versionné, avec repli en
+ *      mémoire si le stockage n'est pas disponible (jamais de plantage).
+ *    - ÉCONOMIE : pièces + XP/niveau gagnés en jouant.
+ *    - QUOTIDIEN : récompense du jour (avec série de connexion).
+ *    - MISSIONS : 3 missions par jour, tirées selon la date.
+ *    - STATS : parties, victoires, série, etc.
+ *
+ *  Logique PURE et testable : la date du jour et le stockage sont injectables.
+ *  Compatible navigateur (window.SparkoMeta) et Node (module.exports).
+ * ========================================================================== */
+
+(function (root) {
+  'use strict';
+  const VERSION = 1;
+  const CLE = 'sparko_profil';
+
+  /* --------------------------------------------------------------------------
+   *  Stockage : localStorage si possible, sinon mémoire. Ne plante jamais.
+   * ------------------------------------------------------------------------ */
+  function creerStockage() {
+    let mem = {}, ls = null;
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('__sparko_test__', '1');
+        localStorage.removeItem('__sparko_test__');
+        ls = localStorage;
+      }
+    } catch (e) { ls = null; }
+    return {
+      persistant: !!ls,
+      get(k) { try { return ls ? ls.getItem(k) : (k in mem ? mem[k] : null); } catch (e) { return (k in mem ? mem[k] : null); } },
+      set(k, v) { try { if (ls) ls.setItem(k, v); else mem[k] = v; } catch (e) { mem[k] = v; } },
+    };
+  }
+
+  /* --------------------------------------------------------------------------
+   *  Date du jour au format AAAA-MM-JJ (injectable pour les tests).
+   * ------------------------------------------------------------------------ */
+  function jourDe(date) {
+    const d = date || new Date();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const j = String(d.getDate()).padStart(2, '0');
+    return d.getFullYear() + '-' + m + '-' + j;
+  }
+  // rng déterministe à partir d'une chaîne (pour tirer les missions du jour).
+  function rngDeChaine(str) {
+    let a = 2166136261;
+    for (let i = 0; i < str.length; i++) { a ^= str.charCodeAt(i); a = Math.imul(a, 16777619); }
+    a >>>= 0;
+    return () => { a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  }
+
+  /* --------------------------------------------------------------------------
+   *  Profil par défaut + chargement/sauvegarde (avec migration de version).
+   * ------------------------------------------------------------------------ */
+  function profilVierge() {
+    return {
+      version: VERSION,
+      pieces: 0,
+      etincelles: 0,
+      xp: 0,
+      stats: { parties: 0, victoires: 0, serie: 0, meilleureSerie: 0, jokers: 0, attaques: 0, sparko: 0 },
+      quotidien: { dernierJour: null, serie: 0 },
+      missions: { jour: null, liste: [] },
+      cosmetiques: { possedes: ['dos_defaut', 'table_defaut', 'sparko_defaut'], equipes: { dos: 'dos_defaut', table: 'table_defaut', sparko: 'sparko_defaut' } },
+      reglages: { muet: false, tutoVu: false, langue: null },
+    };
+  }
+
+  /* --------------------------------------------------------------------------
+   *  CATALOGUE COSMÉTIQUE (aucun effet sur le jeu — purement visuel).
+   *  cat : 'dos' | 'table' | 'sparko'  ·  monnaie : 'pieces' | 'etincelles'
+   * ------------------------------------------------------------------------ */
+  const CATALOGUE_COSM = [
+    // --- Dos de cartes ---
+    { id: 'dos_defaut', cat: 'dos', nom: 'Classique', prix: 0, monnaie: 'pieces', data: { g1: '#2a2f52', g2: '#171a33', symbole: '✦', coul: '#5a4fd0' } },
+    { id: 'dos_braise', cat: 'dos', nom: 'Feu', prix: 150, monnaie: 'pieces', data: { g1: '#7a2a1a', g2: '#3a1108', symbole: '🔥', coul: '#ff8a63' } },
+    { id: 'dos_onde', cat: 'dos', nom: 'Eau', prix: 150, monnaie: 'pieces', data: { g1: '#123a5c', g2: '#08182f', symbole: '💧', coul: '#6cc4ff' } },
+    { id: 'dos_galaxie', cat: 'dos', nom: 'Galaxie', prix: 600, monnaie: 'pieces', data: { g1: '#3a1a5c', g2: '#120a2a', symbole: '✧', coul: '#b3a9ff' } },
+    { id: 'dos_or', cat: 'dos', nom: 'Doré', prix: 20, monnaie: 'etincelles', data: { g1: '#8a6a12', g2: '#3a2a04', symbole: '✦', coul: '#ffe27a' } },
+    // --- Tables ---
+    { id: 'table_defaut', cat: 'table', nom: 'Prairie', prix: 0, monnaie: 'pieces', data: { centre: '#57a86f', mid: '#3c7d54', bord: '#204734', auras: false } },
+    { id: 'table_indigo', cat: 'table', nom: 'Indigo', prix: 0, monnaie: 'pieces', data: { centre: '#4b3fa0', mid: '#332c73', bord: '#1b1740', auras: true } },
+    { id: 'table_emeraude', cat: 'table', nom: 'Émeraude', prix: 250, monnaie: 'pieces', data: { centre: '#1f7a5a', mid: '#14503b', bord: '#082018', auras: false } },
+    { id: 'table_rubis', cat: 'table', nom: 'Rubis', prix: 250, monnaie: 'pieces', data: { centre: '#8a2a3a', mid: '#5a1826', bord: '#280810', auras: false } },
+    { id: 'table_nuit', cat: 'table', nom: 'Nuit', prix: 400, monnaie: 'pieces', data: { centre: '#22304f', mid: '#141e35', bord: '#080c18', auras: false } },
+    { id: 'table_arcenciel', cat: 'table', nom: 'Arc-en-ciel', prix: 30, monnaie: 'etincelles', data: { centre: '#3a3a7a', mid: '#2a2a5a', bord: '#12112a', auras: true } },
+    // --- Skins de Sparko ---
+    { id: 'sparko_defaut', cat: 'sparko', nom: 'Pousse', prix: 0, monnaie: 'pieces', data: { plante: true, glow: '#4bd07f', e: { idle: '🌱', content: '🌱', inquiet: '🌱', fete: '🌻', triste: '🥀' } } },
+    { id: 'sparko_cool', cat: 'sparko', nom: 'Cool', prix: 200, monnaie: 'pieces', data: { glow: '#2ea6ff', e: { idle: '😎', content: '😎', inquiet: '😐', fete: '🤩', triste: '😔' } } },
+    { id: 'sparko_chat', cat: 'sparko', nom: 'Minou', prix: 300, monnaie: 'pieces', data: { glow: '#f5a742', e: { idle: '😺', content: '😸', inquiet: '🙀', fete: '😹', triste: '😿' } } },
+    { id: 'sparko_robot', cat: 'sparko', nom: 'Robo', prix: 300, monnaie: 'pieces', data: { glow: '#9aa3c7', e: { idle: '🤖', content: '🤖', inquiet: '🤖', fete: '🤖', triste: '🤖' } } },
+    { id: 'sparko_etoile', cat: 'sparko', nom: 'Étoile', prix: 25, monnaie: 'etincelles', data: { glow: '#ffcf33', e: { idle: '⭐', content: '🌟', inquiet: '💫', fete: '✨', triste: '⭐' } } },
+  ];
+  function catalogueCosmetiques() { return CATALOGUE_COSM.slice(); }
+  function trouverCosm(id) { return CATALOGUE_COSM.find((c) => c.id === id); }
+  function possede(profil, id) { return profil.cosmetiques.possedes.indexOf(id) >= 0; }
+  function acheter(profil, id) {
+    const it = trouverCosm(id);
+    if (!it) return { ok: false, raison: 'Objet inconnu' };
+    if (possede(profil, id)) return { ok: false, raison: 'Déjà possédé' };
+    const solde = it.monnaie === 'etincelles' ? profil.etincelles : profil.pieces;
+    if (solde < it.prix) return { ok: false, raison: 'Pas assez de ' + (it.monnaie === 'etincelles' ? '✦' : '🪙') };
+    if (it.monnaie === 'etincelles') profil.etincelles -= it.prix; else profil.pieces -= it.prix;
+    profil.cosmetiques.possedes.push(id);
+    return { ok: true };
+  }
+  function equiper(profil, id) {
+    const it = trouverCosm(id);
+    if (!it || !possede(profil, id)) return { ok: false };
+    profil.cosmetiques.equipes[it.cat] = id;
+    return { ok: true };
+  }
+  // Renvoie les DONNÉES visuelles équipées (avec repli sur les valeurs par défaut).
+  function equipes(profil) {
+    const eq = profil.cosmetiques.equipes;
+    const d = (id, def) => (trouverCosm(id) || trouverCosm(def)).data;
+    return { dos: d(eq.dos, 'dos_defaut'), table: d(eq.table, 'table_defaut'), sparko: d(eq.sparko, 'sparko_defaut') };
+  }
+  function migrer(p) {
+    // Ici on gérera les futures montées de version. Pour l'instant : compléter
+    // les champs manquants sans rien perdre.
+    const base = profilVierge();
+    const out = Object.assign({}, base, p);
+    out.stats = Object.assign({}, base.stats, p.stats || {});
+    out.quotidien = Object.assign({}, base.quotidien, p.quotidien || {});
+    out.missions = Object.assign({}, base.missions, p.missions || {});
+    out.reglages = Object.assign({}, base.reglages, p.reglages || {});
+    // Cosmétiques : garantir la structure + la possession/équipement par défaut.
+    out.cosmetiques = Object.assign({}, base.cosmetiques, p.cosmetiques || {});
+    out.cosmetiques.possedes = (p.cosmetiques && p.cosmetiques.possedes) ? p.cosmetiques.possedes.slice() : base.cosmetiques.possedes.slice();
+    out.cosmetiques.equipes = Object.assign({}, base.cosmetiques.equipes, (p.cosmetiques && p.cosmetiques.equipes) || {});
+    for (const d of base.cosmetiques.possedes) if (out.cosmetiques.possedes.indexOf(d) < 0) out.cosmetiques.possedes.push(d);
+    if (typeof out.etincelles !== 'number') out.etincelles = 0;
+    out.version = VERSION;
+    return out;
+  }
+  function charger(stockage) {
+    const brut = stockage.get(CLE);
+    if (!brut) return profilVierge();
+    try { return migrer(JSON.parse(brut)); } catch (e) { return profilVierge(); }
+  }
+  function sauver(stockage, profil) { stockage.set(CLE, JSON.stringify(profil)); }
+
+  /* --------------------------------------------------------------------------
+   *  Niveau à partir de l'XP. Palier n -> n+1 coûte 100*n XP.
+   * ------------------------------------------------------------------------ */
+  function niveauDeXp(xp) {
+    let niveau = 1, reste = xp;
+    while (reste >= 100 * niveau) { reste -= 100 * niveau; niveau++; }
+    return { niveau, xpDansNiveau: reste, xpProchain: 100 * niveau };
+  }
+
+  /* --------------------------------------------------------------------------
+   *  Récompense quotidienne (série de 7 jours qui boucle).
+   * ------------------------------------------------------------------------ */
+  const PALIERS_QUOTIDIEN = [20, 30, 40, 50, 75, 100, 150];
+  function etatQuotidien(profil, date) {
+    const jour = jourDe(date);
+    const disponible = profil.quotidien.dernierJour !== jour;
+    // Série : +1 si on a joué hier, sinon repart à 1.
+    let serieVisee = profil.quotidien.serie;
+    if (disponible) {
+      const hier = jourDe(new Date((date || new Date()).getTime() - 86400000));
+      serieVisee = (profil.quotidien.dernierJour === hier) ? profil.quotidien.serie + 1 : 1;
+    }
+    const idx = (Math.max(1, serieVisee) - 1) % 7;
+    return { disponible, jour, serie: serieVisee, montant: PALIERS_QUOTIDIEN[idx] };
+  }
+  function reclamerQuotidien(profil, date) {
+    const e = etatQuotidien(profil, date);
+    if (!e.disponible) return { reclame: false, montant: 0 };
+    profil.pieces += e.montant;
+    profil.quotidien.dernierJour = e.jour;
+    profil.quotidien.serie = e.serie;
+    return { reclame: true, montant: e.montant, serie: e.serie };
+  }
+
+  /* --------------------------------------------------------------------------
+   *  Missions du jour : 3 tirées selon la date, avec progression.
+   * ------------------------------------------------------------------------ */
+  const CATALOGUE = [
+    { id: 'jouer3',   texte: 'Joue 3 parties',            type: 'parties',  cible: 3, recompense: 30 },
+    { id: 'jouer5',   texte: 'Joue 5 parties',            type: 'parties',  cible: 5, recompense: 45 },
+    { id: 'gagner1',  texte: 'Gagne 1 partie',            type: 'victoires', cible: 1, recompense: 30 },
+    { id: 'gagner2',  texte: 'Gagne 2 parties',           type: 'victoires', cible: 2, recompense: 50 },
+    { id: 'jokers2',  texte: 'Pose 2 Prismes',            type: 'jokers',   cible: 2, recompense: 30 },
+    { id: 'attaque3', texte: 'Inflige 3 attaques (+2/+4)', type: 'attaques', cible: 3, recompense: 35 },
+    { id: 'sparko1',  texte: 'Réussis 1 annonce Sparko',  type: 'sparko',   cible: 1, recompense: 25 },
+  ];
+  function genererMissions(profil, date) {
+    const jour = jourDe(date);
+    if (profil.missions.jour === jour && profil.missions.liste.length) return; // déjà fait aujourd'hui
+    const rng = rngDeChaine(jour);
+    const pool = CATALOGUE.slice();
+    for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+    profil.missions.jour = jour;
+    profil.missions.liste = pool.slice(0, 3).map((m) => ({ id: m.id, texte: m.texte, type: m.type, cible: m.cible, recompense: m.recompense, progres: 0, faite: false }));
+  }
+
+  /* --------------------------------------------------------------------------
+   *  Fin de partie : met à jour stats, pièces, XP et missions.
+   *  contrib = { gagne, jokers, attaques, sparko }
+   *  Renvoie un résumé pour l'affichage.
+   * ------------------------------------------------------------------------ */
+  function finPartie(profil, contrib) {
+    const c = Object.assign({ gagne: false, jokers: 0, attaques: 0, sparko: 0 }, contrib || {});
+    // Stats
+    const st = profil.stats;
+    st.parties++;
+    if (c.gagne) { st.victoires++; st.serie++; st.meilleureSerie = Math.max(st.meilleureSerie, st.serie); }
+    else st.serie = 0;
+    st.jokers += c.jokers; st.attaques += c.attaques; st.sparko += c.sparko;
+
+    // Pièces + XP
+    let pieces = 10 + (c.gagne ? 20 : 0);
+    let xp = 15 + (c.gagne ? 25 : 0);
+
+    // Missions
+    const missionsFaites = [];
+    for (const m of profil.missions.liste) {
+      if (m.faite) continue;
+      const avant = m.progres;
+      if (m.type === 'parties') m.progres += 1;
+      else if (m.type === 'victoires') m.progres += c.gagne ? 1 : 0;
+      else if (m.type === 'jokers') m.progres += c.jokers;
+      else if (m.type === 'attaques') m.progres += c.attaques;
+      else if (m.type === 'sparko') m.progres += c.sparko;
+      if (m.progres > m.cible) m.progres = m.cible;
+      if (avant < m.cible && m.progres >= m.cible) { m.faite = true; missionsFaites.push(m); pieces += m.recompense; }
+    }
+
+    const niveauAvant = niveauDeXp(profil.xp).niveau;
+    profil.pieces += pieces;
+    profil.xp += xp;
+    const niveauApres = niveauDeXp(profil.xp).niveau;
+    let etincelles = 0;
+    if (niveauApres > niveauAvant) { etincelles = 5 * (niveauApres - niveauAvant); profil.etincelles += etincelles; }
+
+    return { pieces, xp, etincelles, missionsFaites, niveauMonte: niveauApres > niveauAvant, niveau: niveauApres };
+  }
+
+  /* --------------------------------------------------------------------------
+   *  EXPORT
+   * ------------------------------------------------------------------------ */
+  const API = {
+    creerStockage, jourDe, charger, sauver, migrer, profilVierge,
+    niveauDeXp, etatQuotidien, reclamerQuotidien, genererMissions, finPartie,
+    catalogueCosmetiques, possede, acheter, equiper, equipes, trouverCosm,
+    PALIERS_QUOTIDIEN, CATALOGUE, CATALOGUE_COSM,
+  };
+  if (typeof module !== 'undefined' && module.exports) module.exports = API;
+  root.SparkoMeta = API;
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+  <script>/* ============================================================================
+ *  SPARKO — INTERFACE DE JEU (ui.js)
+ *  ----------------------------------------------------------------------------
+ *  Deux parties bien séparées :
+ *   A) SparkoGame  : le CONTRÔLEUR (aucun canvas). Il fait le lien entre les
+ *      actions du joueur humain, l'IA et le moteur. Testable sans écran.
+ *   B) le RENDU + l'init : dessin de la table sur Canvas 2D et gestion du
+ *      toucher. Cette partie ne s'exécute que dans le navigateur.
+ *
+ *  Dépend de engine.js et ai.js.
+ * ========================================================================== */
+
+(function (root) {
+  'use strict';
+  const estNode = (typeof module !== 'undefined' && module.exports);
+  const E = estNode ? require('./engine.js') : root.SparkoEngine;
+  const AI = estNode ? require('./ai.js') : root.SparkoAI;
+
+  /* ==========================================================================
+   *  A) CONTRÔLEUR DE JEU (pur, testable)
+   * ======================================================================== */
+  const SparkoGame = {
+    /**
+     * Crée une partie.
+     * @param opts.config    config moteur (variantes, nb joueurs, seed…)
+     * @param opts.niveaux   tableau des niveaux d'IA pour CHAQUE joueur ;
+     *                       l'entrée du joueur humain est ignorée.
+     * @param opts.humain    index du joueur humain (par défaut 0)
+     */
+    creer(opts) {
+      const config = Object.assign({}, opts.config);
+      const jeu = {
+        config,
+        humain: opts.humain != null ? opts.humain : 0,
+        niveaux: opts.niveaux || [],
+        etat: null,
+        mems: [],
+      };
+      jeu.etat = E.creerPartie(config);
+      jeu.mems = jeu.etat.players.map((_, i) => AI.creerMemoire(config.seed || 1, i));
+      return jeu;
+    },
+
+    estTourHumain(jeu) {
+      return jeu.etat.phase === 'playing' && jeu.etat.current === jeu.humain;
+    },
+
+    // Actions légales du joueur humain, quand c'est son tour.
+    actionsHumain(jeu) {
+      if (!SparkoGame.estTourHumain(jeu)) return [];
+      return E.coupsLegaux(jeu.etat);
+    },
+
+    // Applique une action du joueur humain (le moteur revalide la légalité).
+    jouerHumain(jeu, action) {
+      if (jeu.etat.phase !== 'playing') return false;
+      if (jeu.etat.current !== jeu.humain && action.type !== 'announce' && action.type !== 'catch') return false;
+      jeu.etat = E.appliquer(jeu.etat, action);
+      return true;
+    },
+
+    // Fait jouer UN tour d'IA (si le joueur courant est une IA). Renvoie true si
+    // une IA a joué, false sinon.
+    avancerIA(jeu) {
+      if (jeu.etat.phase !== 'playing') return false;
+      const j = jeu.etat.current;
+      if (j === jeu.humain) return false;
+      const niveau = jeu.niveaux[j] || AI.NIVEAUX.NORMAL;
+      jeu.etat = AI.jouerTour(jeu.etat, niveau, jeu.mems[j]);
+      return true;
+    },
+
+    // Le joueur humain peut-il être surpris (il a oublié d'annoncer) ?
+    humainSurprenable(jeu) {
+      return jeu.etat.annonceOuverte && jeu.etat.dernierUn === jeu.humain &&
+             !jeu.etat.players[jeu.humain].saidSparko;
+    },
+
+    // Un adversaire IA est-il surprenable par le joueur humain ?
+    adversaireSurprenable(jeu) {
+      return jeu.etat.annonceOuverte && jeu.etat.dernierUn != null &&
+             jeu.etat.dernierUn !== jeu.humain;
+    },
+  };
+
+  root.SparkoGame = SparkoGame;
+  if (estNode) { module.exports = SparkoGame; return; } // en Node on s'arrête ici
+
+  /* ==========================================================================
+   *  B) RENDU CANVAS + INTERACTIONS (navigateur uniquement)
+   * ======================================================================== */
+
+  // Couleurs des familles (univers "énergie" de Sparko).
+  const COUL = {
+    braise: { base: '#ff5a3c', clair: '#ff8a63', sombre: '#c23a22' },
+    onde:   { base: '#2ea6ff', clair: '#6cc4ff', sombre: '#1c6fb8' },
+    eclair: { base: '#ffcf33', clair: '#ffe27a', sombre: '#c79a00' },
+    seve:   { base: '#35d07f', clair: '#6fe3a6', sombre: '#1f9257' },
+    joker:  { base: '#8a7dff', clair: '#b3a9ff', sombre: '#5a4fd0' },
+  };
+  const GLYPHE = { skip: '⊘', reverse: '↺', draw2: '+2', wild: '✦', wild4: '+4',
+                   mirror: '🪞', shield: '🛡', magnet: '🧲', exchange: '⇄', chaos: '?' };
+  /* --------------------------------------------------------------------------
+   *  INTERNATIONALISATION (FR / EN / ES) — dictionnaire + fonction t().
+   * ------------------------------------------------------------------------ */
+  const I18N = {
+    fr: {
+      tagline: 'Balance tes cartes et vide ta main avant tout le monde !',
+      comment_jouer: '❓ Comment jouer', adversaires: 'Adversaires', niveau: 'Niveau', vitesse: 'Vitesse', langue: 'Langue',
+      niv1: '😴 Cool', niv2: '🙂 Normal', niv3: '😎 Costaud', niv4: '🔥 Expert',
+      options_regles: '⚙️ Options de règles', opt_stack: 'Empiler les +2 / +4', opt_orig: 'Cartes surprises',
+      opt_chaos: 'Carte Chaos', opt_wild8: 'Huit sauvage', opt_score: 'Jouer au score',
+      jouer: '▶ JOUER', t_cadeau: 'Cadeau', t_missions: 'Missions', t_boutique: 'Boutique', t_profil: 'Profil',
+      piocher: 'Piocher', garder: 'Garder', menu_btn: 'Menu',
+      a_toi: 'À toi de jouer', reflechit: '%s réfléchit…', famille: 'Famille : %s', pioche: 'Pioche (%s)',
+      pending: '⚠ +%s en attente', surprendre: '❗ appuie pour surprendre', injouable: 'Cette carte ne peut pas être posée',
+      choix_famille: 'Choisis une famille',
+      fam_braise: 'Feu', fam_onde: 'Eau', fam_eclair: 'Air', fam_seve: 'Terre',
+      fin_manche: 'Manche terminée', scores: 'Scores', manche_suivante: 'Manche suivante',
+      tu_gagnes: '🎉 Tu gagnes !', partie_terminee: 'Partie terminée', bien_joue: 'Bien joué.',
+      le_gagnant: 'Le gagnant : %s', toi: 'Toi', rejouer: 'Rejouer',
+      niveau_up: ' · 🎉 Niveau %s !', mission_faite: 'Mission accomplie : ', missions_faites: 'Missions accomplies : ',
+      quotidien_titre: '🎁 Récompense du jour', quotidien_jour: 'Jour %s de ta série de connexion !', recuperer: 'Récupérer',
+      missions_titre: '🎯 Missions du jour', recompense: 'Récompense : %s 🪙', fermer: 'Fermer',
+      profil_titre: '📊 Profil', niveau_mot: 'Niveau',
+      st_parties: 'Parties jouées', st_victoires: 'Victoires', st_serie: 'Série actuelle', st_record: 'Meilleure série',
+      st_jokers: 'Prismes posés', st_attaques: 'Attaques infligées', st_annonces: 'Annonces Zelem',
+      boutique_titre: '🛍️ Boutique', boutique_note: '100 % cosmétique — aucun effet sur le jeu.',
+      cat_dos: 'Dos de cartes', cat_table: 'Tables', cat_sparko: 'Skins de la mascotte',
+      equipe: '✓ Équipé', equiper: 'Équiper', pas_assez: 'Pas assez', deja: 'Déjà possédé',
+      suivant: 'Suivant ▶', precedent: '◀ Précédent', passer: 'Passer le tutoriel', cest_parti: "C'est parti ! 🎉",
+      tut1_t: "Salut, moi c'est la Pousse !", tut1_x: "Le but est simple : sois le <b>premier à n'avoir plus aucune carte</b> en main.",
+      tut2_t: 'Poser une carte', tut2_x: 'À ton tour, pose une carte de la <b>même couleur</b> OU du <b>même numéro</b> que celle du milieu. Les cartes jouables sont surlignées.',
+      tut3_t: 'Le Prisme (joker)', tut3_x: 'Le <b>Prisme</b> se pose sur n\'importe quelle carte, et c\'est toi qui <b>choisis la couleur</b> qui continue.',
+      tut4_t: 'Les cartes spéciales', tut4_x: '<b>+2</b> : le suivant pioche 2. <b>⊘</b> : saute le suivant. <b>↺</b> : inverse le sens du jeu.',
+      tut5_t: 'Rien à jouer ?', tut5_x: 'Pas de carte compatible ? <b>Pioche</b> une carte. Si elle est jouable, tu peux la poser tout de suite.',
+      tut6_t: 'Annonce !', tut6_x: 'Quand il te reste <b>1 seule carte</b>, appuie vite sur le bouton d\'annonce. Sinon un adversaire te fait piocher 2 cartes !',
+      tut7_t: 'À toi de jouer !', tut7_x: 'Vide ta main en premier pour <b>gagner</b>, remporter des pièces et des récompenses. Amuse-toi bien !',
+    },
+    en: {
+      tagline: 'Play your cards and empty your hand before everyone else!',
+      comment_jouer: '❓ How to play', adversaires: 'Opponents', niveau: 'Level', vitesse: 'Speed', langue: 'Language',
+      niv1: '😴 Easy', niv2: '🙂 Normal', niv3: '😎 Tough', niv4: '🔥 Expert',
+      options_regles: '⚙️ Rule options', opt_stack: 'Stack +2 / +4', opt_orig: 'Surprise cards',
+      opt_chaos: 'Chaos card', opt_wild8: 'Wild eight', opt_score: 'Play for points',
+      jouer: '▶ PLAY', t_cadeau: 'Gift', t_missions: 'Missions', t_boutique: 'Shop', t_profil: 'Profile',
+      piocher: 'Draw', garder: 'Keep', menu_btn: 'Menu',
+      a_toi: 'Your turn', reflechit: '%s is thinking…', famille: 'Family: %s', pioche: 'Deck (%s)',
+      pending: '⚠ +%s pending', surprendre: '❗ tap to catch', injouable: "You can't play this card",
+      choix_famille: 'Choose a family',
+      fam_braise: 'Fire', fam_onde: 'Water', fam_eclair: 'Air', fam_seve: 'Earth',
+      fin_manche: 'Round over', scores: 'Scores', manche_suivante: 'Next round',
+      tu_gagnes: '🎉 You win!', partie_terminee: 'Game over', bien_joue: 'Well played.',
+      le_gagnant: 'Winner: %s', toi: 'You', rejouer: 'Play again',
+      niveau_up: ' · 🎉 Level %s!', mission_faite: 'Mission complete: ', missions_faites: 'Missions complete: ',
+      quotidien_titre: '🎁 Daily reward', quotidien_jour: 'Day %s of your login streak!', recuperer: 'Claim',
+      missions_titre: '🎯 Daily missions', recompense: 'Reward: %s 🪙', fermer: 'Close',
+      profil_titre: '📊 Profile', niveau_mot: 'Level',
+      st_parties: 'Games played', st_victoires: 'Wins', st_serie: 'Current streak', st_record: 'Best streak',
+      st_jokers: 'Wilds played', st_attaques: 'Attacks dealt', st_annonces: 'Zelem calls',
+      boutique_titre: '🛍️ Shop', boutique_note: '100% cosmetic — no gameplay effect.',
+      cat_dos: 'Card backs', cat_table: 'Tables', cat_sparko: 'Mascot skins',
+      equipe: '✓ Equipped', equiper: 'Equip', pas_assez: 'Not enough', deja: 'Already owned',
+      suivant: 'Next ▶', precedent: '◀ Back', passer: 'Skip tutorial', cest_parti: "Let's go! 🎉",
+      tut1_t: "Hi, I'm the Sprout!", tut1_x: 'The goal is simple: be the <b>first to run out of cards</b>.',
+      tut2_t: 'Play a card', tut2_x: 'On your turn, play a card of the <b>same colour</b> OR the <b>same number</b> as the middle one. Playable cards are highlighted.',
+      tut3_t: 'The Prism (wild)', tut3_x: 'The <b>Prism</b> can be played on anything, and <b>you choose the colour</b> that continues.',
+      tut4_t: 'Special cards', tut4_x: '<b>+2</b>: next player draws 2. <b>⊘</b>: skip the next player. <b>↺</b>: reverse the direction.',
+      tut5_t: 'Nothing to play?', tut5_x: 'No matching card? <b>Draw</b> a card. If it\'s playable, you can play it right away.',
+      tut6_t: 'Call out!', tut6_x: 'When you have <b>only 1 card left</b>, quickly tap the call button. Otherwise an opponent makes you draw 2 cards!',
+      tut7_t: 'Your turn!', tut7_x: 'Empty your hand first to <b>win</b>, earn coins and rewards. Have fun!',
+    },
+    es: {
+      tagline: '¡Juega tus cartas y vacía tu mano antes que nadie!',
+      comment_jouer: '❓ Cómo jugar', adversaires: 'Rivales', niveau: 'Nivel', vitesse: 'Velocidad', langue: 'Idioma',
+      niv1: '😴 Fácil', niv2: '🙂 Normal', niv3: '😎 Difícil', niv4: '🔥 Experto',
+      options_regles: '⚙️ Opciones de reglas', opt_stack: 'Acumular +2 / +4', opt_orig: 'Cartas sorpresa',
+      opt_chaos: 'Carta Caos', opt_wild8: 'Ocho comodín', opt_score: 'Jugar por puntos',
+      jouer: '▶ JUGAR', t_cadeau: 'Regalo', t_missions: 'Misiones', t_boutique: 'Tienda', t_profil: 'Perfil',
+      piocher: 'Robar', garder: 'Guardar', menu_btn: 'Menú',
+      a_toi: 'Tu turno', reflechit: '%s está pensando…', famille: 'Familia: %s', pioche: 'Mazo (%s)',
+      pending: '⚠ +%s pendiente', surprendre: '❗ toca para pillar', injouable: 'No puedes jugar esta carta',
+      choix_famille: 'Elige una familia',
+      fam_braise: 'Fuego', fam_onde: 'Agua', fam_eclair: 'Aire', fam_seve: 'Tierra',
+      fin_manche: 'Ronda terminada', scores: 'Puntos', manche_suivante: 'Siguiente ronda',
+      tu_gagnes: '🎉 ¡Ganaste!', partie_terminee: 'Fin de la partida', bien_joue: '¡Bien jugado!',
+      le_gagnant: 'Ganador: %s', toi: 'Tú', rejouer: 'Jugar otra vez',
+      niveau_up: ' · 🎉 ¡Nivel %s!', mission_faite: 'Misión completada: ', missions_faites: 'Misiones completadas: ',
+      quotidien_titre: '🎁 Recompensa diaria', quotidien_jour: '¡Día %s de tu racha!', recuperer: 'Reclamar',
+      missions_titre: '🎯 Misiones diarias', recompense: 'Recompensa: %s 🪙', fermer: 'Cerrar',
+      profil_titre: '📊 Perfil', niveau_mot: 'Nivel',
+      st_parties: 'Partidas jugadas', st_victoires: 'Victorias', st_serie: 'Racha actual', st_record: 'Mejor racha',
+      st_jokers: 'Comodines jugados', st_attaques: 'Ataques infligidos', st_annonces: 'Cantos Zelem',
+      boutique_titre: '🛍️ Tienda', boutique_note: '100 % cosmético — sin efecto en el juego.',
+      cat_dos: 'Reversos', cat_table: 'Mesas', cat_sparko: 'Skins de la mascota',
+      equipe: '✓ Equipado', equiper: 'Equipar', pas_assez: 'No tienes suficiente', deja: 'Ya lo tienes',
+      suivant: 'Siguiente ▶', precedent: '◀ Atrás', passer: 'Saltar tutorial', cest_parti: '¡Vamos! 🎉',
+      tut1_t: '¡Hola, soy el Brote!', tut1_x: 'El objetivo es simple: sé el <b>primero en quedarte sin cartas</b>.',
+      tut2_t: 'Jugar una carta', tut2_x: 'En tu turno, juega una carta del <b>mismo color</b> O del <b>mismo número</b> que la del centro. Las cartas jugables se resaltan.',
+      tut3_t: 'El Prisma (comodín)', tut3_x: 'El <b>Prisma</b> se juega sobre cualquier carta, y <b>tú eliges el color</b> que sigue.',
+      tut4_t: 'Cartas especiales', tut4_x: '<b>+2</b>: el siguiente roba 2. <b>⊘</b>: salta al siguiente. <b>↺</b>: invierte el sentido.',
+      tut5_t: '¿Nada que jugar?', tut5_x: '¿Ninguna carta compatible? <b>Roba</b> una carta. Si es jugable, puedes jugarla enseguida.',
+      tut6_t: '¡Canta!', tut6_x: 'Cuando te quede <b>solo 1 carta</b>, toca rápido el botón de canto. ¡Si no, un rival te hace robar 2 cartas!',
+      tut7_t: '¡Tu turno!', tut7_x: 'Vacía tu mano primero para <b>ganar</b>, conseguir monedas y recompensas. ¡Diviértete!',
+    },
+  };
+  let langue = 'fr';
+  function t(k, v) {
+    let s = (I18N[langue] && I18N[langue][k]) || I18N.fr[k] || k;
+    if (v !== undefined) s = s.replace('%s', v);
+    return s;
+  }
+  function nomFam(f) { return t('fam_' + f); }
+  function texteMission(m) {
+    const T = {
+      fr: { parties: 'Joue %s parties', victoires: 'Gagne %s partie(s)', jokers: 'Pose %s Prismes', attaques: 'Inflige %s attaques (+2/+4)', sparko: 'Réussis %s annonce Zelem' },
+      en: { parties: 'Play %s games', victoires: 'Win %s game(s)', jokers: 'Play %s Prisms', attaques: 'Deal %s attacks (+2/+4)', sparko: 'Make %s Zelem call' },
+      es: { parties: 'Juega %s partidas', victoires: 'Gana %s partida(s)', jokers: 'Juega %s Prismas', attaques: 'Inflige %s ataques (+2/+4)', sparko: 'Haz %s canto Zelem' },
+    };
+    const tab = T[langue] || T.fr; return (tab[m.type] || m.type).replace('%s', m.cible);
+  }
+  function detecterLangue() {
+    const l = ((typeof navigator !== 'undefined' && navigator.language) || 'fr').slice(0, 2).toLowerCase();
+    return ['fr', 'en', 'es'].indexOf(l) >= 0 ? l : 'en';
+  }
+  // Applique la langue aux boutons statiques du DOM.
+  function appliquerLangueDOM() {
+    const set = (id, txt) => { const e = document.getElementById(id); if (e) e.textContent = txt; };
+    set('btnPioche', t('piocher')); set('btnGarder', t('garder')); set('btnMenu', t('menu_btn'));
+  }
+  function changerLangue(l) {
+    langue = l;
+    if (profil) { profil.reglages.langue = l; SparkoMeta.sauver(stockage, profil); }
+    appliquerLangueDOM();
+  }
+
+  // Personnages possibles pour les IA (emoji + petit nom). Tous distincts.
+  const PERSOS = [
+    ['🦊', 'Léa'], ['🐼', 'Tom'], ['🐸', 'Nina'], ['🦁', 'Max'],
+    ['🐧', 'Zoé'], ['🐨', 'Hugo'], ['🐯', 'Lucas'], ['🦉', 'Emma'],
+    ['🐵', 'Jules'], ['🐰', 'Chloé'], ['🐷', 'Sacha'], ['🦄', 'Manon'],
+    ['🐙', 'Noah'], ['🐢', 'Inès'], ['🐝', 'Milo'], ['🦖', 'Lina'],
+    ['🐳', 'Gabin'], ['🦩', 'Anaïs'], ['🦔', 'Théo'], ['🐺', 'Jade'],
+  ];
+  const COUL_AVATAR = ['#ff5a3c', '#2ea6ff', '#ffcf33', '#35d07f', '#8a7dff', '#ff8fb0', '#4ad3c8', '#f5a742'];
+
+  // Attribue à chaque IA un personnage distinct, tiré selon la graine (varie
+  // d'une partie à l'autre, mais reste stable pendant la partie).
+  function attribuerAvatars(seed, n, humain) {
+    const pool = PERSOS.slice();
+    let a = (seed ^ 0x1234abcd) >>> 0;
+    const rnd = () => { a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+    for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+    const res = []; let k = 0;
+    for (let i = 0; i < n; i++) {
+      if (i === humain) { res.push(null); continue; }
+      const p = pool[k % pool.length];
+      res.push({ emoji: p[0], nom: p[1], couleur: COUL_AVATAR[k % COUL_AVATAR.length] });
+      k++;
+    }
+    return res;
+  }
+
+  function coulDe(c) { return COUL[c.family || 'joker']; }
+  function labelCarte(c) { return c.kind === 'number' ? String(c.value) : (GLYPHE[c.kind] || '?'); }
+
+  // --- Coins arrondis ------------------------------------------------------
+  function rrect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  // --- Dessin d'une carte --------------------------------------------------
+  function dessinerCarte(ctx, x, y, w, h, carte, opt) {
+    opt = opt || {};
+    const r = w * 0.14;
+    ctx.save();
+    if (opt.souleve) y -= h * 0.10;
+
+    // Ombre portée
+    ctx.shadowColor = 'rgba(0,0,0,0.45)';
+    ctx.shadowBlur = w * 0.18; ctx.shadowOffsetY = h * 0.04;
+
+    if (opt.faceCachee) {
+      // Dos de carte (cosmétique équipé, avec repli).
+      const dos = (cosmEquipes && cosmEquipes.dos) || { g1: '#2a2f52', g2: '#171a33', symbole: '✦', coul: '#5a4fd0' };
+      rrect(ctx, x, y, w, h, r);
+      const g = ctx.createLinearGradient(x, y, x + w, y + h);
+      g.addColorStop(0, dos.g1); g.addColorStop(1, dos.g2);
+      ctx.fillStyle = g; ctx.fill();
+      ctx.shadowColor = 'transparent';
+      ctx.lineWidth = Math.max(2, w * 0.03); ctx.strokeStyle = '#3d4472'; ctx.stroke();
+      ctx.fillStyle = dos.coul;
+      ctx.font = '800 ' + (w * 0.42) + 'px Nunito, system-ui, sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(dos.symbole, x + w / 2, y + h / 2);
+      ctx.restore(); return;
+    }
+
+    const col = coulDe(carte);
+    rrect(ctx, x, y, w, h, r);
+    const g = ctx.createLinearGradient(x, y, x, y + h);
+    g.addColorStop(0, col.clair); g.addColorStop(0.55, col.base); g.addColorStop(1, col.sombre);
+    ctx.fillStyle = g; ctx.fill();
+    ctx.shadowColor = 'transparent';
+
+    // Liseré (blanc, ou doré si mis en avant/jouable)
+    ctx.lineWidth = Math.max(2, w * 0.05);
+    ctx.strokeStyle = opt.jouable ? '#ffe9a8' : 'rgba(255,255,255,0.85)';
+    ctx.stroke();
+
+    // Pastille centrale claire
+    ctx.beginPath();
+    ctx.ellipse(x + w / 2, y + h / 2, w * 0.34, h * 0.30, 0, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.92)'; ctx.fill();
+
+    // Symbole central
+    ctx.fillStyle = col.sombre;
+    ctx.font = '800 ' + (w * 0.52) + 'px Nunito, system-ui, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(labelCarte(carte), x + w / 2, y + h / 2 + h * 0.01);
+
+    // Pips coins
+    ctx.font = '800 ' + (w * 0.22) + 'px Nunito, system-ui, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.95)';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    ctx.fillText(labelCarte(carte), x + w * 0.12, y + h * 0.07);
+    ctx.textAlign = 'right'; ctx.textBaseline = 'bottom';
+    ctx.fillText(labelCarte(carte), x + w * 0.88, y + h * 0.93);
+
+    // Voile si non jouable (pendant le tour humain)
+    if (opt.grise) { rrect(ctx, x, y, w, h, r); ctx.fillStyle = 'rgba(10,12,24,0.55)'; ctx.fill(); }
+    ctx.restore();
+  }
+
+  // --- État de rendu partagé ----------------------------------------------
+  let jeu = null, canvas = null, ctx = null, W = 0, H = 0, DPR = 1;
+  let zonesMain = [];      // rectangles cliquables des cartes en main
+  let zonePioche = null;   // rectangle de la pioche
+  let enCours = false;     // une IA joue (bloque l'input humain)
+  let messageStatut = '';
+  let vitesse = { avant: 550, apres: 300 }; // délais des tours d'IA (réglable)
+  let avatars = [];        // personnage (emoji/nom/couleur) par joueur
+  let profil = null, stockage = null;               // sauvegarde persistante
+  let statsPartie = { jokers: 0, attaques: 0, sparko: false }; // contributions de la partie
+  let dernieresRecompenses = null;                  // à afficher en fin de partie
+  let cosmEquipes = null;                            // données visuelles équipées (dos/table/sparko)
+  function majCosmetiques() { cosmEquipes = profil ? SparkoMeta.equipes(profil) : null; }
+  // Choix courants du menu (pastilles), gardés en mémoire entre deux ouvertures.
+  let menuChoix = { adversaires: 2, niveau: 2, vitesse: 'normale', stack: true, orig: false, chaos: false, wild8: false, score: false };
+  let menuOptions = false; // options de règles repliées par défaut
+
+  /* --------------------------------------------------------------------------
+   *  SONS — synthèse WebAudio (aucun fichier externe, fonctionne hors-ligne).
+   *  Le contexte audio est créé au premier toucher (politique des navigateurs).
+   * ------------------------------------------------------------------------ */
+  const AC = (typeof window !== 'undefined') && (window.AudioContext || window.webkitAudioContext);
+  let actx = null, muet = false;
+  function initAudio() {
+    if (!actx && AC) { try { actx = new AC(); } catch (e) { actx = null; } }
+    if (actx && actx.state === 'suspended') { try { actx.resume(); } catch (e) {} }
+  }
+  function bip(f, dur, type, vol, f2) {
+    if (!actx || muet) return;
+    try {
+      const o = actx.createOscillator(), g = actx.createGain(), t = actx.currentTime;
+      o.type = type || 'sine'; o.frequency.setValueAtTime(f, t);
+      if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + dur);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(vol || 0.15, t + 0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t + dur + 0.03);
+    } catch (e) {}
+  }
+  const Sons = {
+    poser:    () => bip(330, 0.08, 'triangle', 0.16, 520),
+    piocher:  () => bip(230, 0.09, 'sine', 0.14, 180),
+    saut:     () => bip(680, 0.12, 'square', 0.10, 300),
+    sens:     () => bip(420, 0.11, 'sine', 0.12, 720),
+    attaque:  () => bip(160, 0.20, 'sawtooth', 0.17, 80),
+    joker:    () => { bip(520, 0.10, 'sine', 0.12, 900); setTimeout(() => bip(800, 0.12, 'sine', 0.10, 1200), 60); },
+    sparko:   () => { bip(660, 0.10, 'triangle', 0.16, 990); setTimeout(() => bip(990, 0.14, 'triangle', 0.14, 1320), 95); },
+    victoire: () => [523, 659, 784, 1046].forEach((f, i) => setTimeout(() => bip(f, 0.16, 'triangle', 0.16), i * 110)),
+    defaite:  () => [400, 320, 250].forEach((f, i) => setTimeout(() => bip(f, 0.18, 'sawtooth', 0.12), i * 130)),
+    clic:     () => bip(300, 0.04, 'square', 0.08),
+  };
+
+  /* --------------------------------------------------------------------------
+   *  ANIMATIONS — détectées par DIFFÉRENCE d'état (indépendant de qui a joué).
+   * ------------------------------------------------------------------------ */
+  const maintenant = () => (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+  let popT0 = -1, secousseT0 = -1, flashs = [], confettis = [];
+  let mascotHumeurTmp = null, mascotJusqu = 0;
+
+  function lancerPop() { popT0 = maintenant(); }
+  function secouer() { secousseT0 = maintenant(); }
+  function flash(txt, coul) { flashs.push({ txt, coul, t0: maintenant(), dur: 700 }); }
+  function mascotHumeur(h, ms) { mascotHumeurTmp = h; mascotJusqu = maintenant() + (ms || 1400); }
+  function confetti() {
+    confettis = [];
+    const coul = ['#ff5a3c', '#2ea6ff', '#ffcf33', '#35d07f', '#8a7dff'];
+    for (let i = 0; i < 130; i++) {
+      confettis.push({ x: Math.random() * W, y: -20 - Math.random() * H * 0.4,
+        vx: (Math.random() - 0.5) * 60, vy: 120 + Math.random() * 160,
+        s: 5 + Math.random() * 7, c: coul[i % coul.length], r: Math.random() * 6, t0: maintenant() });
+    }
+  }
+  function progPop() { if (popT0 < 0) return 1; const p = (maintenant() - popT0) / 220; return p >= 1 ? 1 : p; }
+  function offsetSecousse() {
+    if (secousseT0 < 0) return { x: 0, y: 0 };
+    const p = (maintenant() - secousseT0) / 260; if (p >= 1) return { x: 0, y: 0 };
+    const amp = 8 * (1 - p);
+    return { x: Math.sin(p * 42) * amp, y: Math.cos(p * 37) * amp };
+  }
+
+  // Instantané minimal de l'état, pour comparer avant/après une action.
+  function snap(s) {
+    if (!s) return null;
+    return { top: s.defausse[s.defausse.length - 1], counts: s.players.map((p) => p.hand.length),
+             pending: s.pendingDraw, dir: s.direction, phase: s.phase, winner: s.winner };
+  }
+
+  // Compare deux instantanés et déclenche sons + animations.
+  function detecter(av, ap) {
+    if (!av || !ap || !jeu) return;
+    if (ap.top !== av.top) {
+      lancerPop();
+      const c = jeu.etat.registre[ap.top];
+      switch (c.kind) {
+        case 'skip':    flash('SAUT', '#ffcf33'); Sons.saut(); break;
+        case 'reverse': flash('SENS ↺', '#6cc4ff'); Sons.sens(); break;
+        case 'draw2': case 'wild4': flash('+' + ap.pending, '#ff5a3c'); Sons.attaque(); secouer(); break;
+        case 'wild':    flash('PRISME', '#b3a9ff'); Sons.joker(); break;
+        case 'chaos':   flash('CHAOS', '#b3a9ff'); Sons.joker(); break;
+        case 'mirror':  flash('MIROIR', '#6cc4ff'); Sons.joker(); break;
+        case 'shield':  flash('BOUCLIER', '#35d07f'); Sons.joker(); break;
+        case 'magnet':  flash('AIMANT', '#ffcf33'); Sons.poser(); break;
+        case 'exchange':flash('ÉCHANGE', '#8a7dff'); Sons.poser(); break;
+        default:        Sons.poser();
+      }
+    }
+    let piocheDetectee = false;
+    for (let i = 0; i < ap.counts.length; i++) if (ap.counts[i] > av.counts[i]) piocheDetectee = true;
+    if (piocheDetectee) Sons.piocher();
+    if (ap.pending > av.pending) secouer();
+    if (av.phase === 'playing' && ap.phase !== 'playing') {
+      const jeGagne = ap.winner === jeu.etat.players[jeu.humain].id;
+      if (jeGagne) { confetti(); Sons.victoire(); mascotHumeur('fete', 3000); }
+      else { Sons.defaite(); mascotHumeur('triste', 3000); }
+      // Récompenses (une seule fois, à la fin réelle de la partie).
+      if (ap.phase === 'gameOver' && profil) {
+        dernieresRecompenses = SparkoMeta.finPartie(profil, {
+          gagne: jeGagne, jokers: statsPartie.jokers, attaques: statsPartie.attaques, sparko: statsPartie.sparko ? 1 : 0,
+        });
+        SparkoMeta.sauver(stockage, profil);
+        majHud();
+      }
+    }
+  }
+
+  // Enveloppe une action humaine : instantané -> action -> détection.
+  function agir(action) {
+    const av = snap(jeu.etat);
+    SparkoGame.jouerHumain(jeu, action);
+    detecter(av, snap(jeu.etat));
+  }
+
+  /* --------------------------------------------------------------------------
+   *  Dessin de la mascotte Sparko (coin bas-gauche), avec expressions.
+   * ------------------------------------------------------------------------ */
+  function humeurCourante() {
+    if (mascotHumeurTmp && maintenant() < mascotJusqu) return mascotHumeurTmp;
+    if (!jeu || jeu.etat.phase !== 'playing') return 'idle';
+    const s = jeu.etat;
+    if (s.pendingDraw > 0 && s.current === jeu.humain) return 'inquiet';
+    if (s.current === jeu.humain) return 'content';
+    return 'idle';
+  }
+  function dessinerMascotte(x, y, taille) {
+    const h = humeurCourante();
+    const skin = (cosmEquipes && cosmEquipes.sparko) || { glow: '#ffcf33', e: { idle: '😊', content: '😄', inquiet: '😟', fete: '🥳', triste: '😢' } };
+    const emo = skin.e[h] || skin.e.idle;
+    const t = maintenant() / 500;
+    const bob = Math.sin(t) * taille * 0.07;
+    ctx.save();
+    ctx.translate(x, y + bob);
+    // Disque sombre + lueur (couleur du skin) derrière l'emoji
+    ctx.shadowColor = skin.glow; ctx.shadowBlur = 20;
+    ctx.beginPath(); ctx.arc(0, 0, taille * 1.05, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(20,22,44,0.55)'; ctx.fill();
+    ctx.shadowBlur = 0;
+    // Étincelles qui scintillent autour
+    ctx.fillStyle = skin.glow;
+    for (let i = 0; i < 3; i++) {
+      const a = t * 0.6 + i * 2.1;
+      const rr = taille * (1.25 + 0.08 * Math.sin(t * 2 + i));
+      const s2 = taille * 0.12;
+      ctx.globalAlpha = 0.85;
+      ctx.fillRect(Math.cos(a) * rr - s2 / 2, Math.sin(a) * rr - s2 / 2, s2, s2);
+    }
+    ctx.globalAlpha = 1;
+    if (skin.plante) {
+      dessinerPlante(taille, h);
+    } else {
+      // Emoji visage (skins alternatifs)
+      ctx.font = (taille * 1.55) + 'px system-ui, "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(emo, 0, taille * 0.04);
+    }
+    ctx.restore();
+  }
+
+  // Petite plante souriante (mascotte par défaut), avec expressions.
+  function dessinerPlante(t, mood) {
+    const vert = '#3fae6a', clair = '#8fe6ac', fonce = '#123a22';
+    // Feuilles du bas
+    ctx.fillStyle = vert;
+    for (const sgn of [-1, 1]) {
+      ctx.save(); ctx.translate(sgn * t * 0.42, t * 0.42); ctx.rotate(sgn * 0.6);
+      ctx.beginPath(); ctx.ellipse(0, 0, t * 0.5, t * 0.24, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    }
+    // Tige
+    ctx.strokeStyle = vert; ctx.lineWidth = t * 0.16; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(0, t * 0.55); ctx.lineTo(0, 0); ctx.stroke();
+    // Pousse au sommet
+    ctx.save(); ctx.translate(0, -t * 0.92); ctx.rotate(-0.3);
+    ctx.beginPath(); ctx.ellipse(0, 0, t * 0.15, t * 0.28, 0, 0, Math.PI * 2); ctx.fillStyle = vert; ctx.fill();
+    ctx.restore();
+    // Tête (visage)
+    ctx.beginPath(); ctx.arc(0, -t * 0.32, t * 0.62, 0, Math.PI * 2);
+    ctx.fillStyle = clair; ctx.fill();
+    ctx.lineWidth = t * 0.08; ctx.strokeStyle = vert; ctx.stroke();
+    // Yeux
+    const ey = -t * 0.38, ex = t * 0.24;
+    ctx.fillStyle = fonce; ctx.strokeStyle = fonce;
+    if (mood === 'fete') {
+      ctx.lineWidth = t * 0.055;
+      for (const sx of [-ex, ex]) { ctx.beginPath(); ctx.arc(sx, ey, t * 0.11, Math.PI, 0); ctx.stroke(); }
+    } else {
+      const r = mood === 'inquiet' ? t * 0.07 : t * 0.10;
+      for (const sx of [-ex, ex]) { ctx.beginPath(); ctx.arc(sx, ey, r, 0, Math.PI * 2); ctx.fill(); }
+    }
+    // Joues (rosées) quand content/fête
+    if (mood === 'content' || mood === 'fete' || mood === 'idle') {
+      ctx.fillStyle = 'rgba(255,120,120,0.5)';
+      for (const sx of [-ex - t * 0.08, ex + t * 0.08]) { ctx.beginPath(); ctx.arc(sx, ey + t * 0.16, t * 0.08, 0, Math.PI * 2); ctx.fill(); }
+    }
+    // Bouche
+    ctx.strokeStyle = fonce; ctx.lineWidth = t * 0.06; ctx.beginPath();
+    const my = -t * 0.16;
+    if (mood === 'inquiet' || mood === 'triste') ctx.arc(0, my + t * 0.16, t * 0.16, 1.15 * Math.PI, 1.85 * Math.PI);
+    else ctx.arc(0, my - t * 0.04, t * 0.2, 0.15 * Math.PI, 0.85 * Math.PI); // sourire
+    ctx.stroke();
+  }
+
+  // Dessine flashs d'effet, confettis (par-dessus la table).
+  function dessinerEffets() {
+    const now = maintenant();
+    // Flashs (bannières centrales)
+    flashs = flashs.filter((f) => now - f.t0 < f.dur);
+    for (const f of flashs) {
+      const p = (now - f.t0) / f.dur;
+      const alpha = p < 0.2 ? p / 0.2 : (1 - (p - 0.2) / 0.8);
+      const scale = 0.8 + p * 0.5;
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, alpha);
+      ctx.translate(W / 2, H * 0.34);
+      ctx.scale(scale, scale);
+      ctx.font = '900 40px Nunito, system-ui, sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.lineWidth = 8; ctx.strokeStyle = 'rgba(0,0,0,0.5)'; ctx.strokeText(f.txt, 0, 0);
+      ctx.fillStyle = f.coul; ctx.fillText(f.txt, 0, 0);
+      ctx.restore();
+    }
+    // Confettis
+    if (confettis.length) {
+      ctx.save();
+      for (const c of confettis) {
+        const dt = (now - c.t0) / 1000;
+        const x = c.x + c.vx * dt, y = c.y + c.vy * dt + 40 * dt * dt * 30;
+        c.r += 0.1;
+        ctx.translate(x, y); ctx.rotate(c.r);
+        ctx.fillStyle = c.c; ctx.fillRect(-c.s / 2, -c.s / 2, c.s, c.s * 0.6);
+        ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+      }
+      ctx.restore();
+      if (now - confettis[0].t0 > 2600) confettis = [];
+    }
+  }
+
+  function ratio() { return (window.devicePixelRatio || 1); }
+
+  function redimensionner() {
+    const rect = canvas.getBoundingClientRect();
+    DPR = ratio();
+    canvas.width = Math.round(rect.width * DPR);
+    canvas.height = Math.round(rect.height * DPR);
+    W = rect.width; H = rect.height;
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    rendre();
+  }
+
+  // --- Boucle de rendu -----------------------------------------------------
+  function rendre() {
+    if (!ctx) return;
+    ctx.clearRect(0, 0, W, H);
+
+    // Fond : table indigo avec halo central
+    // Fond : table équipée (cosmétique) — dégradé + auras colorées optionnelles
+    const tb = (cosmEquipes && cosmEquipes.table) || { centre: '#57a86f', mid: '#3c7d54', bord: '#204734', auras: false };
+    const rg = ctx.createRadialGradient(W / 2, H * 0.40, 30, W / 2, H * 0.55, Math.max(W, H) * 0.85);
+    rg.addColorStop(0, tb.centre); rg.addColorStop(0.55, tb.mid); rg.addColorStop(1, tb.bord);
+    ctx.fillStyle = rg; ctx.fillRect(0, 0, W, H);
+    if (tb.auras) {
+      const auras = [['#ff5a3c', 0.10, 0.12], ['#2ea6ff', 0.90, 0.12], ['#ffcf33', 0.12, 0.90], ['#35d07f', 0.88, 0.90]];
+      ctx.save(); ctx.globalCompositeOperation = 'lighter';
+      for (const a of auras) {
+        const gg = ctx.createRadialGradient(W * a[1], H * a[2], 0, W * a[1], H * a[2], Math.max(W, H) * 0.42);
+        gg.addColorStop(0, a[0]); gg.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.globalAlpha = 0.13; ctx.fillStyle = gg; ctx.fillRect(0, 0, W, H);
+      }
+      ctx.restore();
+    }
+
+    // Aucune partie en cours (menu ouvert) : on s'arrête après le fond.
+    if (!jeu) { majBoutons(); return; }
+
+    const s = jeu.etat;
+    ctx.save();
+    const sec = offsetSecousse();
+    ctx.translate(sec.x, sec.y);
+    const cw = Math.min(W * 0.17, 78);   // largeur d'une carte
+    const ch = cw * 1.45;
+
+    // ----- Adversaires (en haut) -----
+    const adversaires = s.players.map((p, i) => i).filter((i) => i !== jeu.humain);
+    const zoneHautY = H * 0.06;
+    const largeurBloc = W / adversaires.length;
+    adversaires.forEach((idx, k) => {
+      const p = s.players[idx];
+      const cx = largeurBloc * (k + 0.5);
+      const estCourant = (s.current === idx && s.phase === 'playing');
+      const av = avatars[idx] || { emoji: '🤖', nom: 'IA ' + idx, couleur: '#3a3f66' };
+      const ay = zoneHautY + 20, ar = 23;
+
+      // Anneau lumineux si c'est son tour
+      if (estCourant) {
+        ctx.save(); ctx.shadowColor = '#ffcf33'; ctx.shadowBlur = 18;
+        ctx.beginPath(); ctx.arc(cx, ay, ar + 3, 0, Math.PI * 2);
+        ctx.lineWidth = 3; ctx.strokeStyle = '#ffcf33'; ctx.stroke(); ctx.restore();
+      }
+      // Pastille à la couleur du personnage
+      ctx.beginPath(); ctx.arc(cx, ay, ar, 0, Math.PI * 2);
+      ctx.fillStyle = av.couleur; ctx.fill();
+      // Emoji du personnage
+      ctx.font = '26px system-ui, "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(av.emoji, cx, ay + 1);
+      // Nom + nb cartes
+      ctx.fillStyle = estCourant ? '#ffe08a' : '#e8ecf5';
+      ctx.font = '800 13px Nunito, system-ui, sans-serif';
+      ctx.fillText(av.nom + ' · ' + p.hand.length + ' 🂠', cx, ay + ar + 12);
+      // Mini-dos empilés
+      const mini = 14, n = Math.min(p.hand.length, 7);
+      for (let m = 0; m < n; m++) {
+        dessinerCarte(ctx, cx - (n * mini) / 2 + m * mini, zoneHautY + 68, mini * 1.6, mini * 1.6 * 1.45, null, { faceCachee: true });
+      }
+      // Marqueur "surprendre" si l'IA a 1 carte sans annoncer
+      if (s.annonceOuverte && s.dernierUn === idx) {
+        ctx.fillStyle = '#ff5a3c'; ctx.font = '800 13px Nunito, sans-serif';
+        ctx.fillText(t('surprendre'), cx, zoneHautY + 104);
+      }
+    });
+
+    // ----- Centre : pioche + défausse -----
+    const cy = H * 0.42;
+    const pxPioche = W * 0.30, pxDefausse = W * 0.62;
+    // Pioche
+    zonePioche = { x: pxPioche - cw / 2, y: cy - ch / 2, w: cw, h: ch };
+    dessinerCarte(ctx, zonePioche.x, zonePioche.y, cw, ch, null, { faceCachee: true });
+    ctx.fillStyle = '#cfd6f5'; ctx.font = '700 12px Nunito, sans-serif';
+    ctx.textAlign = 'center'; ctx.fillText(t('pioche', s.pioche.length), pxPioche, cy + ch / 2 + 16);
+
+    // Défausse (carte active) avec lueur de famille + animation "pop"
+    const active = E.dessus(s);
+    const col = coulDe(active);
+    ctx.save();
+    const sc = 0.7 + 0.3 * (1 - Math.pow(1 - progPop(), 3)); // easeOutCubic 0.7->1.0
+    ctx.translate(pxDefausse, cy); ctx.scale(sc, sc); ctx.translate(-pxDefausse, -cy);
+    ctx.shadowColor = col.base; ctx.shadowBlur = 26;
+    dessinerCarte(ctx, pxDefausse - cw / 2, cy - ch / 2, cw, ch, active, {});
+    ctx.restore();
+
+    // Famille active (pastille) + sens + pile +N
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = col.base;
+    ctx.beginPath(); ctx.arc(pxDefausse, cy - ch / 2 - 16, 9, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#e8ecf5'; ctx.font = '700 12px Nunito, sans-serif';
+    ctx.fillText(t('famille', (nomFam(s.activeFamily) || '—')), pxDefausse, cy + ch / 2 + 16);
+    // Sens
+    ctx.fillStyle = '#8b95b5'; ctx.font = '800 20px Nunito, sans-serif';
+    ctx.fillText(s.direction === 1 ? '↻' : '↺', W * 0.46, cy);
+    // Pile d'attaque
+    if (s.pendingDraw > 0) {
+      ctx.fillStyle = '#ff5a3c'; ctx.font = '800 16px Nunito, sans-serif';
+      ctx.fillText(t('pending', s.pendingDraw), W / 2, cy - ch / 2 - 40);
+    }
+
+    // (Le message de statut est dessiné plus bas, une fois la main positionnée.)
+
+    // ----- Ma main (en bas) -----
+    const main = s.players[jeu.humain].hand.map((id) => s.registre[id]);
+    const monTour = SparkoGame.estTourHumain(jeu);
+    const legaux = monTour ? E.coupsLegaux(jeu.etat) : [];
+    const idsJouables = new Set(legaux.filter((a) => a.type === 'play' || a.type === 'playDrawn').map((a) => a.cardId));
+
+    const margeBas = H * 0.14;
+    const yMain = H - ch - 18;
+    const dispo = W - cw - 24;
+    const pas = main.length > 1 ? Math.min(cw * 0.72, dispo / (main.length - 1)) : 0;
+    const largeurTotale = cw + pas * (main.length - 1);
+    const x0 = (W - largeurTotale) / 2;
+
+    zonesMain = [];
+    main.forEach((c, i) => {
+      const x = x0 + i * pas;
+      const jouable = idsJouables.has(c.id);
+      zonesMain.push({ x, y: yMain, w: cw, h: ch, id: c.id, jouable });
+    });
+    // dessin gauche->droite (les suivantes passent au-dessus)
+    zonesMain.forEach((z) => {
+      const c = s.registre[z.id];
+      dessinerCarte(ctx, z.x, z.y, z.w, z.h, c, { jouable: z.jouable && monTour, grise: monTour && !z.jouable, souleve: z.jouable && monTour });
+    });
+
+    // ----- Statut / message (pastille centrée dans l'espace libre) -----
+    const txtStatut = messageStatut || (SparkoGame.estTourHumain(jeu) ? t('a_toi') : '…');
+    if (txtStatut && txtStatut !== '…') {
+      const yStatut = (cy + ch / 2 + 24 + yMain) / 2; // milieu entre défausse et main
+      ctx.font = '800 14px Nunito, system-ui, sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      const larg = ctx.measureText(txtStatut).width + 28;
+      rrect(ctx, W / 2 - larg / 2, yStatut - 15, larg, 30, 15);
+      ctx.fillStyle = 'rgba(20,22,44,0.72)'; ctx.fill();
+      ctx.fillStyle = SparkoGame.estTourHumain(jeu) ? '#ffcf33' : '#aeb6d8';
+      ctx.fillText(txtStatut, W / 2, yStatut);
+    }
+
+    // Mascotte Sparko (plus grande, coin bas-gauche au-dessus de la main)
+    dessinerMascotte(W * 0.15, yMain - 54, 34);
+
+    // Effets par-dessus (flashs, confettis)
+    dessinerEffets();
+
+    ctx.restore(); // fin de la secousse
+
+    // ----- Boutons DOM : mise à jour de leur visibilité -----
+    majBoutons();
+  }
+
+  // --- Boutons d'action (DOM) ---------------------------------------------
+  function majBoutons() {
+    if (!jeu) {
+      ['btnPioche', 'btnGarder', 'btnSparko'].forEach((id) => {
+        const b = document.getElementById(id); if (b) b.style.display = 'none';
+      });
+      return;
+    }
+    const s = jeu.etat;
+    const monTour = SparkoGame.estTourHumain(jeu);
+    const btnPioche = document.getElementById('btnPioche');
+    const btnSparko = document.getElementById('btnSparko');
+    const btnGarder = document.getElementById('btnGarder');
+
+    // Pioche : visible à mon tour, hors sous-phase "carte piochée".
+    btnPioche.style.display = (monTour && !s.awaitingPostDraw) ? 'block' : 'none';
+    // Bouton "Garder" : visible quand j'ai pioché une carte jouable.
+    btnGarder.style.display = (monTour && s.awaitingPostDraw) ? 'block' : 'none';
+    // Sparko : visible quand j'ai 1 carte sans avoir annoncé.
+    btnSparko.style.display = (s.dernierUn === jeu.humain && !s.players[jeu.humain].saidSparko && s.phase === 'playing') ? 'block' : 'none';
+  }
+
+  /* --------------------------------------------------------------------------
+   *  Boucle de jeu : enchaîne les tours d'IA jusqu'au joueur humain / fin.
+   * ------------------------------------------------------------------------ */
+  function boucle() {
+    if (!jeu) return;
+    const s = jeu.etat;
+    if (s.phase !== 'playing') { rendre(); montrerFin(); return; }
+    if (s.current === jeu.humain) { enCours = false; messageStatut = ''; rendre(); return; }
+    // Tour d'une IA, avec un petit délai pour la lisibilité.
+    enCours = true;
+    const avc = avatars[s.current];
+    messageStatut = t('reflechit', (avc ? avc.nom : 'IA ' + s.current));
+    rendre();
+    setTimeout(() => {
+      const av = snap(jeu.etat);
+      SparkoGame.avancerIA(jeu);
+      detecter(av, snap(jeu.etat));
+      rendre();
+      setTimeout(boucle, vitesse.apres);
+    }, vitesse.avant);
+  }
+
+  // --- Interactions tactiles ----------------------------------------------
+  function pointDansRect(px, py, r) { return px >= r.x && px <= r.x + r.w && py >= r.y && py <= r.y + r.h; }
+
+  function surClic(px, py) {
+    if (!jeu || enCours) return;
+    const s = jeu.etat;
+
+    // Surprendre une IA qui a oublié d'annoncer ?
+    if (SparkoGame.adversaireSurprenable(jeu)) {
+      // zone haute = surprendre
+      if (py < H * 0.30) { agir({ type: 'catch' }); boucle(); return; }
+    }
+    if (!SparkoGame.estTourHumain(jeu)) return;
+
+    // Carte de la main ? (du dessus vers le dessous)
+    for (let i = zonesMain.length - 1; i >= 0; i--) {
+      const z = zonesMain[i];
+      const zz = z.jouable ? { x: z.x, y: z.y - z.h * 0.10, w: z.w, h: z.h } : z;
+      if (pointDansRect(px, py, zz)) {
+        if (!z.jouable) { toast(t('injouable')); return; }
+        tenterJouer(z.id, s.awaitingPostDraw ? 'playDrawn' : 'play');
+        return;
+      }
+    }
+    // Pioche ?
+    if (zonePioche && pointDansRect(px, py, zonePioche) && !s.awaitingPostDraw) {
+      agir({ type: 'draw' }); boucle();
+    }
+  }
+
+  // Joue une carte ; ouvre le sélecteur de famille si c'est un joker.
+  function tenterJouer(cardId, type) {
+    const c = jeu.etat.registre[cardId];
+    // Suivi des missions/stats (contributions du joueur humain).
+    if (c.kind === 'wild' || c.kind === 'wild4') statsPartie.jokers++;
+    if (c.kind === 'draw2' || c.kind === 'wild4') statsPartie.attaques++;
+    if (c.kind === 'wild' || c.kind === 'wild4') {
+      choisirFamille((fam) => { agir({ type, cardId, chosenFamily: fam }); boucle(); });
+    } else {
+      agir({ type, cardId }); boucle();
+    }
+  }
+
+  /* --------------------------------------------------------------------------
+   *  Overlays DOM (sélecteur de famille, fin de partie, menu)
+   * ------------------------------------------------------------------------ */
+  function overlay() { return document.getElementById('overlay'); }
+  function fermerOverlay() { overlay().style.display = 'none'; overlay().innerHTML = ''; overlay().className = ''; }
+
+  function choisirFamille(cb) {
+    const o = overlay(); o.style.display = 'flex';
+    o.innerHTML = '<div class="panneau"><h2>' + t('choix_famille') + '</h2><div class="familles"></div></div>';
+    const cont = o.querySelector('.familles');
+    ['braise', 'onde', 'eclair', 'seve'].forEach((f) => {
+      const b = document.createElement('button');
+      b.className = 'famBtn'; b.textContent = nomFam(f);
+      b.style.background = COUL[f].base;
+      b.onclick = () => { fermerOverlay(); cb(f); };
+      cont.appendChild(b);
+    });
+  }
+
+  // Aperçu VISUEL d'un cosmétique (mini dos / échantillon de table / Sparko).
+  function apercuCosm(it) {
+    const d = it.data;
+    if (it.cat === 'dos') {
+      return '<span style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:44px;border-radius:7px;' +
+        'background:linear-gradient(135deg,' + d.g1 + ',' + d.g2 + ');color:' + d.coul + ';font-weight:800;font-size:15px;' +
+        'border:1px solid rgba(255,255,255,.25)">' + d.symbole + '</span>';
+    }
+    if (it.cat === 'table') {
+      return '<span style="display:inline-block;width:48px;height:32px;border-radius:7px;border:1px solid rgba(255,255,255,.2);' +
+        'background:radial-gradient(circle at 50% 45%,' + d.centre + ',' + d.mid + ' 60%,' + d.bord + ')"></span>';
+    }
+    // sparko
+    return '<span style="display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;' +
+      'background:rgba(20,22,44,.6);box-shadow:0 0 10px ' + d.glow + ';font-size:20px">' + d.e.idle + '</span>';
+  }
+
+  // Panneau boutique (cosmétique uniquement — aucun avantage de jeu).
+  function panneauBoutique() {
+    const o = overlay(); o.className = ''; o.style.display = 'flex';
+    const cats = [['dos', t('cat_dos')], ['table', t('cat_table')], ['sparko', t('cat_sparko')]];
+    const cat = SparkoMeta.catalogueCosmetiques();
+    let html = '<div class="panneau large" style="max-height:82vh;overflow-y:auto">';
+    html += '<h2>' + t('boutique_titre') + '</h2>';
+    html += '<p style="color:#ffcf33;font-weight:800">🪙 ' + profil.pieces + ' &nbsp;·&nbsp; ✦ ' + profil.etincelles + '</p>';
+    html += '<p style="color:#9aa3c7;font-size:12px;margin-top:-6px">' + t('boutique_note') + '</p>';
+    for (const c of cats) {
+      html += '<h3 style="margin:14px 0 6px;color:#cfe0ff;font-size:15px">' + c[1] + '</h3>';
+      for (const it of cat.filter((x) => x.cat === c[0])) {
+        const owned = SparkoMeta.possede(profil, it.id);
+        const equipe = profil.cosmetiques.equipes[c[0]] === it.id;
+        let action;
+        if (equipe) action = '<span style="color:#35d07f;font-weight:800;font-size:13px">' + t('equipe') + '</span>';
+        else if (owned) action = '<button class="miniBtn" id="cos_' + it.id + '">' + t('equiper') + '</button>';
+        else action = '<button class="miniBtn" id="cos_' + it.id + '">' + it.prix + ' ' + (it.monnaie === 'etincelles' ? '✦' : '🪙') + '</button>';
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;margin:6px 0;background:#12112a;border-radius:10px;padding:9px 11px">' +
+          '<span style="display:flex;align-items:center;gap:10px">' + apercuCosm(it) + '<span style="font-weight:700">' + it.nom + '</span></span>' + action + '</div>';
+      }
+    }
+    html += '<button id="boFermer" class="gros" style="margin-top:14px">Fermer</button></div>';
+    o.innerHTML = html;
+    document.getElementById('boFermer').onclick = () => { Sons.clic(); menu(); };
+    for (const it of cat) {
+      const b = document.getElementById('cos_' + it.id);
+      if (!b) continue;
+      b.onclick = () => {
+        initAudio();
+        if (SparkoMeta.possede(profil, it.id)) { SparkoMeta.equiper(profil, it.id); majCosmetiques(); Sons.clic(); }
+        else {
+          const r = SparkoMeta.acheter(profil, it.id);
+          if (!r.ok) { toast(r.raison.indexOf('assez') >= 0 ? t('pas_assez') : t('deja')); return; }
+          SparkoMeta.equiper(profil, it.id); majCosmetiques(); Sons.victoire();
+        }
+        SparkoMeta.sauver(stockage, profil); majHud(); panneauBoutique(); // rafraîchir
+      };
+    }
+  }
+
+  function gagnantNom(s) {
+    if (!s.winner) return '—';
+    const idx = parseInt(s.winner.slice(1), 10);
+    if (idx === jeu.humain) return t('toi');
+    return (avatars[idx] && avatars[idx].nom) || ('IA ' + idx);
+  }
+
+  function montrerFin() {
+    const s = jeu.etat;
+    const o = overlay(); o.style.display = 'flex';
+    const gagnant = s.winner;
+    const jeGagne = gagnant === s.players[jeu.humain].id;
+    const roundOver = s.phase === 'roundOver';
+    let html = '<div class="panneau">';
+    if (roundOver) {
+      html += '<h2>' + t('fin_manche') + '</h2>';
+      html += '<p>' + t('scores') + ' : ' + s.players.map((p) => 'J' + p.id.slice(1) + ' ' + s.scores[p.id]).join(' · ') + '</p>';
+      html += '<button id="ovContinuer" class="gros">' + t('manche_suivante') + '</button>';
+    } else {
+      html += '<h2>' + (jeGagne ? t('tu_gagnes') : t('partie_terminee')) + '</h2>';
+      html += '<p>' + (jeGagne ? t('bien_joue') : t('le_gagnant', gagnantNom(s))) + '</p>';
+      if (dernieresRecompenses) {
+        const r = dernieresRecompenses;
+        html += '<p style="color:#ffcf33;font-weight:800;font-size:16px">+' + r.pieces + ' 🪙' +
+                (r.etincelles ? ' · +' + r.etincelles + ' ✦' : '') + ' · +' + r.xp + ' XP' +
+                (r.niveauMonte ? t('niveau_up', r.niveau) : '') + '</p>';
+        if (r.missionsFaites.length) {
+          html += '<p style="color:#35d07f;font-weight:700">' + (r.missionsFaites.length > 1 ? t('missions_faites') : t('mission_faite')) + r.missionsFaites.map((m) => texteMission(m)).join(', ') + '</p>';
+        }
+      }
+      html += '<button id="ovRejouer" class="gros">' + t('rejouer') + '</button>';
+      html += '<button id="ovMenu" class="sec">' + t('menu_btn') + '</button>';
+    }
+    html += '</div>';
+    o.innerHTML = html;
+    if (roundOver) {
+      document.getElementById('ovContinuer').onclick = () => {
+        // Nouvelle manche (v1 : sans report des scores — viendra avec la couche méta).
+        const cfg = Object.assign({}, jeu.config, { seed: (jeu.config.seed || 1) + 1 });
+        demarrer(cfg, jeu.niveaux);
+      };
+    } else {
+      document.getElementById('ovRejouer').onclick = () => {
+        const cfg = Object.assign({}, jeu.config, { seed: (jeu.config.seed || 1) + 7 });
+        demarrer(cfg, jeu.niveaux);
+      };
+      document.getElementById('ovMenu').onclick = () => menu();
+    }
+  }
+
+  function toast(txt) {
+    const t = document.getElementById('toast');
+    t.textContent = txt; t.style.opacity = '1';
+    clearTimeout(t._h); t._h = setTimeout(() => { t.style.opacity = '0'; }, 1400);
+  }
+
+  // Barre du haut : pièces + niveau.
+  function majHud() {
+    if (!profil) return;
+    const nv = SparkoMeta.niveauDeXp(profil.xp);
+    const ep = document.getElementById('hudPieces'); if (ep) ep.textContent = profil.pieces;
+    const en = document.getElementById('hudNiveau'); if (en) en.textContent = nv.niveau;
+  }
+
+  // Popup de récompense quotidienne (au lancement si disponible).
+  function popupQuotidien(retour) {
+    if (!profil) { if (retour) retour(); return; }
+    const e = SparkoMeta.etatQuotidien(profil);
+    if (!e.disponible) { if (retour) retour(); return; }
+    const o = overlay(); o.className = ''; o.style.display = 'flex';
+    o.innerHTML = '<div class="panneau"><h2>' + t('quotidien_titre') + '</h2>' +
+      '<p>' + t('quotidien_jour', e.serie) + '</p>' +
+      '<div style="font-size:36px;font-weight:900;color:#ffcf33;margin:6px 0">+' + e.montant + ' 🪙</div>' +
+      '<button id="qReclamer" class="gros">' + t('recuperer') + '</button></div>';
+    document.getElementById('qReclamer').onclick = () => {
+      initAudio(); SparkoMeta.reclamerQuotidien(profil); SparkoMeta.sauver(stockage, profil);
+      majHud(); Sons.victoire(); if (retour) retour(); else menu();
+    };
+  }
+
+  // Panneau des missions du jour.
+  function panneauMissions() {
+    const o = overlay(); o.className = ''; o.style.display = 'flex';
+    let html = '<div class="panneau large"><h2>' + t('missions_titre') + '</h2>';
+    for (const m of profil.missions.liste) {
+      const pct = Math.min(100, Math.round(m.progres / m.cible * 100));
+      html += '<div style="margin:12px 0">' +
+        '<div style="display:flex;justify-content:space-between;font-weight:700;font-size:14px">' +
+        '<span>' + (m.faite ? '✅ ' : '') + texteMission(m) + '</span><span>' + m.progres + '/' + m.cible + '</span></div>' +
+        '<div style="background:#12112a;border-radius:6px;height:10px;margin-top:5px;overflow:hidden">' +
+        '<div style="background:' + (m.faite ? '#35d07f' : '#8a7dff') + ';height:100%;width:' + pct + '%"></div></div>' +
+        '<div style="color:#9aa3c7;font-size:12px;margin-top:3px">' + t('recompense', m.recompense) + '</div></div>';
+    }
+    html += '<button id="mFermer" class="gros">Fermer</button></div>';
+    o.innerHTML = html;
+    document.getElementById('mFermer').onclick = () => { Sons.clic(); menu(); };
+  }
+
+  // Panneau profil / statistiques.
+  function panneauStats() {
+    const st = profil.stats; const nv = SparkoMeta.niveauDeXp(profil.xp);
+    const tx = st.parties ? Math.round(st.victoires / st.parties * 100) : 0;
+    const ligne = (l, v) => '<div style="display:flex;justify-content:space-between;margin:7px 0;color:#d7dcf3;font-size:14px"><span>' + l + '</span><b>' + v + '</b></div>';
+    const o = overlay(); o.className = ''; o.style.display = 'flex';
+    o.innerHTML = '<div class="panneau large"><h2>' + t('profil_titre') + '</h2>' +
+      '<p style="color:#ffcf33;font-weight:800">' + t('niveau_mot') + ' ' + nv.niveau + ' — ' + nv.xpDansNiveau + '/' + nv.xpProchain + ' XP · ' + profil.pieces + ' 🪙</p>' +
+      ligne(t('st_parties'), st.parties) +
+      ligne(t('st_victoires'), st.victoires + ' (' + tx + '%)') +
+      ligne(t('st_serie'), st.serie) +
+      ligne(t('st_record'), st.meilleureSerie) +
+      ligne(t('st_jokers'), st.jokers) +
+      ligne(t('st_attaques'), st.attaques) +
+      ligne(t('st_annonces'), st.sparko) +
+      '<button id="sFermer" class="gros">Fermer</button></div>';
+    document.getElementById('sFermer').onclick = () => { Sons.clic(); menu(); };
+  }
+
+  /* --------------------------------------------------------------------------
+   *  Menu / configuration de partie
+   * ------------------------------------------------------------------------ */
+  /* --------------------------------------------------------------------------
+   *  DIDACTICIEL — petit tutoriel illustré (auto au 1er lancement + menu).
+   * ------------------------------------------------------------------------ */
+  let tutoStep = 0;
+  const COULF = { braise: '#ff5a3c', onde: '#2ea6ff', eclair: '#ffcf33', seve: '#35d07f' };
+  function miniCarte(bg, label, txtCoul) {
+    return '<span style="display:inline-flex;align-items:center;justify-content:center;width:42px;height:58px;' +
+      'border-radius:8px;background:' + bg + ';color:' + (txtCoul || '#fff') + ';font-weight:900;font-size:20px;' +
+      'border:2px solid rgba(255,255,255,.85);box-shadow:0 3px 8px rgba(0,0,0,.4)">' + label + '</span>';
+  }
+  function etapesTuto() {
+    const fleche = '<span style="font-size:22px;color:#8b95b5">→</span>';
+    return [
+      { emoji: '🌱', titre: t('tut1_t'), texte: t('tut1_x') },
+      { emoji: '🎨', titre: t('tut2_t'), visuel: miniCarte(COULF.onde, '7') + fleche + miniCarte(COULF.onde, '3') + miniCarte(COULF.braise, '7'), texte: t('tut2_x') },
+      { emoji: '✦', titre: t('tut3_t'), visuel: miniCarte('linear-gradient(135deg,#b3a9ff,#7a6bff)', '✦'), texte: t('tut3_x') },
+      { emoji: '⚡', titre: t('tut4_t'), visuel: miniCarte(COULF.braise, '+2') + miniCarte(COULF.eclair, '⊘', '#3a2c00') + miniCarte(COULF.seve, '↺'), texte: t('tut4_x') },
+      { emoji: '🃏', titre: t('tut5_t'), texte: t('tut5_x') },
+      { emoji: '🔔', titre: t('tut6_t'), texte: t('tut6_x') },
+      { emoji: '🏆', titre: t('tut7_t'), texte: t('tut7_x') },
+    ];
+  }
+  function tutoriel(auto) {
+    const TUTO = etapesTuto();
+    const total = TUTO.length;
+    if (tutoStep < 0) tutoStep = 0;
+    if (tutoStep >= total) tutoStep = total - 1;
+    const s = TUTO[tutoStep];
+    const o = overlay(); o.className = 'menuPlein'; o.style.display = 'flex';
+    let html = '<div class="panneau tuto">';
+    html += '<div style="font-size:46px;margin-bottom:4px">' + s.emoji + '</div>';
+    html += '<h2>' + s.titre + '</h2>';
+    if (s.visuel) html += '<div style="margin:12px 0;display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap">' + s.visuel + '</div>';
+    html += '<p>' + s.texte + '</p>';
+    html += '<div style="margin:14px 0;letter-spacing:3px;color:#a07d2a">' + TUTO.map((_, i) => (i === tutoStep ? '●' : '○')).join('') + '</div>';
+    html += '<div style="display:flex;gap:8px">';
+    if (tutoStep > 0) html += '<button class="sec" id="tPrec" style="flex:1;margin-top:0">' + t('precedent') + '</button>';
+    if (tutoStep < total - 1) html += '<button class="gros" id="tSuiv" style="flex:2;margin-top:0">' + t('suivant') + '</button>';
+    else html += '<button class="gros" id="tFin" style="flex:2;margin-top:0">' + t('cest_parti') + '</button>';
+    html += '</div>';
+    if (tutoStep < total - 1) html += '<button class="lienOptions" id="tPasser" style="color:#8a7030">' + t('passer') + '</button>';
+    html += '</div>';
+    o.innerHTML = html;
+    const finir = () => {
+      if (profil) { profil.reglages.tutoVu = true; SparkoMeta.sauver(stockage, profil); }
+      menu();
+      if (auto) popupQuotidien();
+    };
+    const bp = document.getElementById('tPrec'); if (bp) bp.onclick = () => { Sons.clic(); tutoStep--; tutoriel(auto); };
+    const bs = document.getElementById('tSuiv'); if (bs) bs.onclick = () => { Sons.clic(); tutoStep++; tutoriel(auto); };
+    const bf = document.getElementById('tFin'); if (bf) bf.onclick = () => { Sons.victoire(); finir(); };
+    const bx = document.getElementById('tPasser'); if (bx) bx.onclick = () => { Sons.clic(); finir(); };
+  }
+
+  function menu() {
+    const o = overlay(); o.className = 'menuPlein'; o.style.display = 'flex';
+    const skin = (cosmEquipes && cosmEquipes.sparko) || { e: { content: '😄' } };
+    const nivLab = { 1: t('niv1'), 2: t('niv2'), 3: t('niv3'), 4: t('niv4') };
+    const pill = (g, v, lab) => '<button class="pill' + (menuChoix[g] === v ? ' actif' : '') + '" data-g="' + g + '" data-v="' + v + '">' + lab + '</button>';
+
+    let html = '<div class="panneau menu">';
+    html += '<div class="titreJeu">' + (skin.e.content || '😄') + ' <span>ZELEM</span></div>';
+    html += '<p class="tagline">' + t('tagline') + '</p>';
+    html += '<button class="lienOptions" id="cfgTuto" style="margin:-6px 0 10px">' + t('comment_jouer') + '</button>';
+
+    html += '<div class="choixLigne"><span>' + t('adversaires') + '</span><div class="pills">' + pill('adversaires', 1, '1') + pill('adversaires', 2, '2') + pill('adversaires', 3, '3') + '</div></div>';
+    html += '<div class="choixLigne"><span>' + t('niveau') + '</span><div class="pills">' + [1, 2, 3, 4].map((n) => pill('niveau', n, nivLab[n])).join('') + '</div></div>';
+    html += '<div class="choixLigne"><span>' + t('vitesse') + '</span><div class="pills">' + pill('vitesse', 'lente', '🐢') + pill('vitesse', 'normale', '🚶') + pill('vitesse', 'rapide', '⚡') + '</div></div>';
+    const langPill = (l, lab) => '<button class="pill' + (langue === l ? ' actif' : '') + '" data-lang="' + l + '">' + lab + '</button>';
+    html += '<div class="choixLigne"><span>' + t('langue') + '</span><div class="pills">' + langPill('fr', 'FR') + langPill('en', 'EN') + langPill('es', 'ES') + '</div></div>';
+
+    html += '<button class="lienOptions" id="toggleOpt">' + t('options_regles') + ' ' + (menuOptions ? '▲' : '▼') + '</button>';
+    if (menuOptions) {
+      const opt = (g, lab) => '<button class="opt' + (menuChoix[g] ? ' actif' : '') + '" data-g="' + g + '" data-v="toggle">' + (menuChoix[g] ? '✅' : '⬜') + ' ' + lab + '</button>';
+      html += '<div class="optbloc">' + opt('stack', t('opt_stack')) + opt('orig', t('opt_orig')) + opt('chaos', t('opt_chaos')) + opt('wild8', t('opt_wild8')) + opt('score', t('opt_score')) + '</div>';
+    }
+
+    html += '<button id="cfgJouer" class="jouer">' + t('jouer') + '</button>';
+    html += '<div class="tuiles">' +
+      '<button class="tuile t1" id="cfgQuotidien"><span class="ic">🎁</span>' + t('t_cadeau') + '</button>' +
+      '<button class="tuile t2" id="cfgMissions"><span class="ic">🎯</span>' + t('t_missions') + '</button>' +
+      '<button class="tuile t3" id="cfgBoutique"><span class="ic">🛍️</span>' + t('t_boutique') + '</button>' +
+      '<button class="tuile t4" id="cfgStats"><span class="ic">📊</span>' + t('t_profil') + '</button>' +
+      '</div>';
+    html += '</div>';
+    o.innerHTML = html;
+
+    // Pastilles (adversaires/niveau/vitesse) + options : mettent à jour le choix.
+    const pastilles = document.querySelectorAll ? document.querySelectorAll('.pill, .opt') : [];
+    if (pastilles.forEach) pastilles.forEach((b) => {
+      b.onclick = () => {
+        initAudio(); Sons.clic();
+        if (b.dataset.lang) { changerLangue(b.dataset.lang); menu(); return; }
+        const g = b.dataset.g, v = b.dataset.v;
+        menuChoix[g] = (v === 'toggle') ? !menuChoix[g] : (g === 'vitesse' ? v : parseInt(v, 10));
+        menu();
+      };
+    });
+    const tg = document.getElementById('toggleOpt'); if (tg) tg.onclick = () => { Sons.clic(); menuOptions = !menuOptions; menu(); };
+
+    document.getElementById('cfgJouer').onclick = () => {
+      const config = {
+        numPlayers: menuChoix.adversaires + 1,
+        seed: (Date.now() % 1000000) + 1,
+        vitesse: menuChoix.vitesse,
+        variantStacking: menuChoix.stack,
+        variantOriginals: menuChoix.orig,
+        variantChaos: menuChoix.chaos,
+        variantWild8: menuChoix.wild8,
+        scoreMode: menuChoix.score,
+        scoreTarget: 300,
+      };
+      const niveaux = []; for (let i = 0; i < config.numPlayers; i++) niveaux.push(menuChoix.niveau);
+      demarrer(config, niveaux);
+    };
+    const bM = document.getElementById('cfgMissions'); if (bM) bM.onclick = () => { Sons.clic(); panneauMissions(); };
+    const bS = document.getElementById('cfgStats'); if (bS) bS.onclick = () => { Sons.clic(); panneauStats(); };
+    const bB = document.getElementById('cfgBoutique'); if (bB) bB.onclick = () => { Sons.clic(); panneauBoutique(); };
+    const bQ = document.getElementById('cfgQuotidien'); if (bQ) bQ.onclick = () => { Sons.clic(); popupQuotidien(); };
+    const bT = document.getElementById('cfgTuto'); if (bT) bT.onclick = () => { Sons.clic(); tutoStep = 0; tutoriel(false); };
+  }
+
+  // Démarre (ou relance) une partie et lance la boucle.
+  function demarrer(config, niveaux) {
+    initAudio(); Sons.clic();
+    const V = { lente: { avant: 950, apres: 520 }, normale: { avant: 550, apres: 300 }, rapide: { avant: 240, apres: 140 } };
+    vitesse = V[config.vitesse] || V.normale;
+    fermerOverlay();
+    statsPartie = { jokers: 0, attaques: 0, sparko: false };
+    dernieresRecompenses = null;
+    jeu = SparkoGame.creer({ config, niveaux, humain: 0 });
+    avatars = attribuerAvatars(config.seed || 1, config.numPlayers, 0);
+    messageStatut = '';
+    rendre();
+    boucle();
+  }
+
+  /* --------------------------------------------------------------------------
+   *  Initialisation (appelée par la page)
+   * ------------------------------------------------------------------------ */
+  function init() {
+    canvas = document.getElementById('table');
+    ctx = canvas.getContext('2d');
+
+    // Sauvegarde : charge le profil, prépare les missions du jour.
+    stockage = SparkoMeta.creerStockage();
+    profil = SparkoMeta.charger(stockage);
+    langue = profil.reglages.langue || detecterLangue();
+    profil.reglages.langue = langue;
+    SparkoMeta.genererMissions(profil);
+    SparkoMeta.sauver(stockage, profil);
+    majCosmetiques();
+    muet = !!profil.reglages.muet;
+    majHud();
+    appliquerLangueDOM();
+
+    // Boutons d'action (chaque interaction initialise aussi l'audio).
+    document.getElementById('btnPioche').onclick = () => { initAudio(); if (jeu && SparkoGame.estTourHumain(jeu)) { agir({ type: 'draw' }); boucle(); } };
+    document.getElementById('btnGarder').onclick = () => { initAudio(); if (jeu) { agir({ type: 'pass' }); boucle(); } };
+    document.getElementById('btnSparko').onclick = () => { initAudio(); if (jeu) { statsPartie.sparko = true; agir({ type: 'announce', playerIndex: jeu.humain }); Sons.sparko(); rendre(); } };
+    document.getElementById('btnMenu').onclick = () => { initAudio(); Sons.clic(); menu(); };
+
+    // Bouton son (coupe/rétablit, mémorisé dans le profil)
+    const btnSon = document.getElementById('btnSon');
+    if (btnSon) {
+      btnSon.textContent = muet ? '🔇' : '🔊';
+      btnSon.onclick = () => {
+        initAudio(); muet = !muet; btnSon.textContent = muet ? '🔇' : '🔊';
+        if (profil) { profil.reglages.muet = muet; SparkoMeta.sauver(stockage, profil); }
+        if (!muet) Sons.clic();
+      };
+    }
+
+    // Toucher / clic sur la table
+    const pos = (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const p = e.touches ? e.touches[0] : e;
+      return { x: p.clientX - rect.left, y: p.clientY - rect.top };
+    };
+    canvas.addEventListener('click', (e) => { initAudio(); const p = pos(e); surClic(p.x, p.y); });
+
+    window.addEventListener('resize', redimensionner);
+    redimensionner();
+    menu(); // écran d'accueil
+    if (profil && !profil.reglages.tutoVu) { tutoStep = 0; tutoriel(true); } // tutoriel au 1er lancement
+    else popupQuotidien(); // sinon, récompense du jour si disponible
+
+    // Boucle d'animation continue (si disponible).
+    const raf = window.requestAnimationFrame ? window.requestAnimationFrame.bind(window) : null;
+    if (raf) { const tick = () => { rendre(); raf(tick); }; raf(tick); }
+  }
+
+  root.SparkoUI = { init, _setLangue: changerLangue };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('sw.js').catch(function () {});
+      });
+    }
+  </script>
+</body>
+</html>
