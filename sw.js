@@ -1,5 +1,5 @@
 /* Service worker de Zelem — met le jeu en cache pour un fonctionnement hors-ligne. */
-const CACHE = 'kardzo-v1';
+const CACHE = 'zelem-v2';
 const ASSETS = [
   './', './index.html', './manifest.webmanifest',
   './icon-192.png', './icon-512.png', './maskable-512.png'
