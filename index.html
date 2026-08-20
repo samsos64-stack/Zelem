@@ -25,12 +25,12 @@
     padding:0 14px; font-weight:800}
   #topbar .titre{letter-spacing:.5px}
   #topbar .titre b{color:var(--or)}
-  #btnMenu, #btnSon{background:#2a2950; color:var(--txt); border:none; border-radius:10px;
+  #btnMenu, #btnSon, #btnAide{background:#2a2950; color:var(--txt); border:none; border-radius:10px;
     padding:8px 12px; font-weight:800; font-size:14px}
   #hud{font-size:13px; color:#ffe08a; font-weight:800; white-space:nowrap}
   #table{flex:1; width:100%; display:block}
   #actions{min-height:78px; display:flex; gap:10px; align-items:center;
-    justify-content:center; padding:10px 14px calc(10px + env(safe-area-inset-bottom))}
+    justify-content:center; padding:10px 14px calc(18px + env(safe-area-inset-bottom, 16px))}
   #actions button{border:none; border-radius:14px; font-weight:800; font-size:16px;
     padding:14px 18px; color:#20223f; box-shadow:0 6px 0 rgba(0,0,0,.25)}
   #btnPioche{background:#4aa3ff; color:#06213f}
@@ -69,6 +69,10 @@
   .pill.actif{background:linear-gradient(180deg,#9b8dff,#7a6bff); color:#fff; border-color:#c9c0ff; box-shadow:0 4px 0 rgba(0,0,0,.25)}
   .lienOptions{width:100%; background:transparent; color:#9aa3c7; border:none; font-weight:800; font-size:13px; padding:10px 0 4px}
   .optbloc{display:flex; flex-direction:column; gap:6px; margin-bottom:6px}
+  .optrow{display:flex; gap:6px; align-items:stretch}
+  .optrow .opt{flex:1}
+  .optaide{flex:0 0 auto; width:42px; background:#2a2860; color:#fff; border:none; border-radius:10px; font-size:15px; font-weight:800}
+  .optaide:active{transform:translateY(2px)}
   .opt{background:#12112a; color:#d7dcf3; border:none; border-radius:10px; padding:10px; font-weight:700; font-size:13px; text-align:left}
   .opt.actif{background:#16301f; color:#9ff0c2}
   .jouer{width:100%; margin-top:12px; background:linear-gradient(180deg,#4be08a,#22c26b); color:#04351d; border:none; border-radius:16px; padding:16px; font-weight:900; font-size:20px; letter-spacing:1px; box-shadow:0 6px 0 #128a49}
@@ -89,6 +93,7 @@
   .panneau.menu .lienOptions{color:#8a7030}
   .panneau.menu .opt{background:#fff6da; color:#5a4a18}
   .panneau.menu .opt.actif{background:#e6f3d8; color:#2f6a1f}
+  .panneau.menu .optaide{background:#ffe1a6; color:#8a5a10}
   /* Menu plein écran (fond jaune pastel occupant tout l'écran) */
   #overlay.menuPlein{background:linear-gradient(180deg,#fef3b8,#ffe89a); padding:0; align-items:stretch; backdrop-filter:none}
   #overlay.menuPlein .panneau.menu{width:100%; max-width:520px; margin:0 auto; min-height:100dvh; border:none; border-radius:0; box-shadow:none; background:transparent; display:flex; flex-direction:column; justify-content:center; padding:26px 24px; overflow-y:auto}
@@ -113,6 +118,7 @@
       <div class="titre">🃏 <b>ZELEM</b></div>
       <div id="hud">🪙 <b id="hudPieces">0</b> · Niv <b id="hudNiveau">1</b></div>
       <div style="display:flex; gap:8px">
+        <button id="btnAide">❓</button>
         <button id="btnSon">🔊</button>
         <button id="btnMenu">Menu</button>
       </div>
@@ -1406,6 +1412,26 @@
       niv1: '😴 Cool', niv2: '🙂 Normal', niv3: '😎 Costaud', niv4: '🔥 Expert',
       options_regles: '⚙️ Options de règles', opt_stack: 'Empiler les +2 / +4', opt_orig: 'Cartes surprises',
       opt_chaos: 'Carte Chaos', opt_wild8: 'Huit sauvage', opt_score: 'Jouer au score',
+      aide_regles_titre: 'Options de règles',
+      xpl_stack: 'Quand un adversaire te joue un +2 ou +4, tu peux répliquer avec ta propre carte +2/+4 au lieu de piocher : les pénalités s\'additionnent et retombent sur le joueur suivant qui ne peut pas riposter.',
+      xpl_orig: 'Ajoute des cartes spéciales rigolotes au jeu : Miroir 🪞, Bouclier 🛡, Aimant 🧲 et Échange 🔁 (voir « Cartes spéciales »).',
+      xpl_chaos: 'Ajoute la carte Chaos 🎲 : jouable sur n\'importe quelle famille, elle déclenche un effet surprise aléatoire (tout le monde pioche, rotation des mains, changement de famille…).',
+      xpl_wild8: 'Le 8 devient un joker : tu peux le poser sur n\'importe quelle carte et choisir la nouvelle famille.',
+      xpl_score: 'Au lieu de gagner en une manche, on joue plusieurs manches et on compte des points. Le premier à atteindre le score cible l\'emporte.',
+      aide_cartes_titre: '🃏 Cartes spéciales',
+      nc_prisme: 'Prisme', nc_prisme4: 'Prisme +4', nc_plus2: '+2', nc_saut: 'Saut de tour', nc_sens: 'Changement de sens',
+      nc_miroir: 'Miroir 🪞', nc_bouclier: 'Bouclier 🛡', nc_aimant: 'Aimant 🧲', nc_echange: 'Échange 🔁', nc_chaos: 'Chaos 🎲',
+      xc_prisme: 'Se joue sur n\'importe quelle famille. Tu choisis la nouvelle famille active.',
+      xc_prisme4: 'Comme le Prisme, mais le joueur suivant pioche 4 cartes et passe son tour.',
+      xc_plus2: 'Le joueur suivant pioche 2 cartes et passe son tour (sauf s\'il peut empiler).',
+      xc_saut: 'Le joueur suivant est sauté : il perd son tour.',
+      xc_sens: 'Inverse le sens du jeu (horaire ↔ anti-horaire).',
+      xc_miroir: 'Renvoie l\'effet de la dernière attaque à son expéditeur.',
+      xc_bouclier: 'Te protège : annule la prochaine attaque dirigée contre toi.',
+      xc_aimant: 'Vole une carte au hasard dans la main d\'un adversaire.',
+      xc_echange: 'Échange toute ta main avec celle d\'un adversaire.',
+      xc_chaos: 'Effet surprise aléatoire (activé par l\'option « Carte Chaos »).',
+      aide_cartes_btn: '❓ Cartes',
       jouer: '▶ JOUER', t_cadeau: 'Cadeau', t_missions: 'Missions', t_boutique: 'Boutique', t_profil: 'Profil',
       piocher: 'Piocher', garder: 'Garder', menu_btn: 'Menu',
       a_toi: 'À toi de jouer', reflechit: '%s réfléchit…', famille: 'Famille : %s', pioche: 'Pioche (%s)',
@@ -1439,6 +1465,26 @@
       niv1: '😴 Easy', niv2: '🙂 Normal', niv3: '😎 Tough', niv4: '🔥 Expert',
       options_regles: '⚙️ Rule options', opt_stack: 'Stack +2 / +4', opt_orig: 'Surprise cards',
       opt_chaos: 'Chaos card', opt_wild8: 'Wild eight', opt_score: 'Play for points',
+      aide_regles_titre: 'Rule options',
+      xpl_stack: 'When an opponent plays a +2 or +4 on you, you can respond with your own +2/+4 instead of drawing: the penalties add up and land on the next player who can\'t stack back.',
+      xpl_orig: 'Adds fun special cards to the game: Mirror 🪞, Shield 🛡, Magnet 🧲 and Swap 🔁 (see "Special cards").',
+      xpl_chaos: 'Adds the Chaos card 🎲: playable on any family, it triggers a random surprise effect (everyone draws, hands rotate, family changes…).',
+      xpl_wild8: 'The 8 becomes a wild card: play it on anything and pick the new family.',
+      xpl_score: 'Instead of winning in one round, you play several rounds and count points. First to reach the target score wins.',
+      aide_cartes_titre: '🃏 Special cards',
+      nc_prisme: 'Prism', nc_prisme4: 'Prism +4', nc_plus2: '+2', nc_saut: 'Skip', nc_sens: 'Reverse',
+      nc_miroir: 'Mirror 🪞', nc_bouclier: 'Shield 🛡', nc_aimant: 'Magnet 🧲', nc_echange: 'Swap 🔁', nc_chaos: 'Chaos 🎲',
+      xc_prisme: 'Play it on any family. You choose the new active family.',
+      xc_prisme4: 'Like the Prism, but the next player draws 4 cards and skips their turn.',
+      xc_plus2: 'The next player draws 2 cards and skips their turn (unless they can stack).',
+      xc_saut: 'The next player is skipped: they lose their turn.',
+      xc_sens: 'Reverses the direction of play (clockwise ↔ counter-clockwise).',
+      xc_miroir: 'Reflects the last attack back to its sender.',
+      xc_bouclier: 'Protects you: cancels the next attack aimed at you.',
+      xc_aimant: 'Steals a random card from an opponent\'s hand.',
+      xc_echange: 'Swaps your whole hand with an opponent\'s.',
+      xc_chaos: 'Random surprise effect (enabled by the "Chaos card" option).',
+      aide_cartes_btn: '❓ Cards',
       jouer: '▶ PLAY', t_cadeau: 'Gift', t_missions: 'Missions', t_boutique: 'Shop', t_profil: 'Profile',
       piocher: 'Draw', garder: 'Keep', menu_btn: 'Menu',
       a_toi: 'Your turn', reflechit: '%s is thinking…', famille: 'Family: %s', pioche: 'Deck (%s)',
@@ -1472,6 +1518,26 @@
       niv1: '😴 Fácil', niv2: '🙂 Normal', niv3: '😎 Difícil', niv4: '🔥 Experto',
       options_regles: '⚙️ Opciones de reglas', opt_stack: 'Acumular +2 / +4', opt_orig: 'Cartas sorpresa',
       opt_chaos: 'Carta Caos', opt_wild8: 'Ocho comodín', opt_score: 'Jugar por puntos',
+      aide_regles_titre: 'Opciones de reglas',
+      xpl_stack: 'Cuando un rival te juega un +2 o +4, puedes responder con tu propio +2/+4 en vez de robar: las penalizaciones se suman y caen sobre el siguiente jugador que no pueda replicar.',
+      xpl_orig: 'Añade cartas especiales divertidas: Espejo 🪞, Escudo 🛡, Imán 🧲 e Intercambio 🔁 (ver «Cartas especiales»).',
+      xpl_chaos: 'Añade la carta Caos 🎲: jugable sobre cualquier familia, activa un efecto sorpresa aleatorio (todos roban, rotación de manos, cambio de familia…).',
+      xpl_wild8: 'El 8 se convierte en comodín: juégalo sobre cualquier carta y elige la nueva familia.',
+      xpl_score: 'En vez de ganar en una ronda, se juegan varias rondas y se cuentan puntos. El primero en llegar a la puntuación objetivo gana.',
+      aide_cartes_titre: '🃏 Cartas especiales',
+      nc_prisme: 'Prisma', nc_prisme4: 'Prisma +4', nc_plus2: '+2', nc_saut: 'Salto', nc_sens: 'Cambio de sentido',
+      nc_miroir: 'Espejo 🪞', nc_bouclier: 'Escudo 🛡', nc_aimant: 'Imán 🧲', nc_echange: 'Intercambio 🔁', nc_chaos: 'Caos 🎲',
+      xc_prisme: 'Se juega sobre cualquier familia. Tú eliges la nueva familia activa.',
+      xc_prisme4: 'Como el Prisma, pero el siguiente jugador roba 4 cartas y pierde el turno.',
+      xc_plus2: 'El siguiente jugador roba 2 cartas y pierde el turno (salvo que pueda acumular).',
+      xc_saut: 'El siguiente jugador es saltado: pierde su turno.',
+      xc_sens: 'Invierte el sentido del juego (horario ↔ antihorario).',
+      xc_miroir: 'Devuelve el efecto del último ataque a quien lo envió.',
+      xc_bouclier: 'Te protege: anula el próximo ataque dirigido a ti.',
+      xc_aimant: 'Roba una carta al azar de la mano de un rival.',
+      xc_echange: 'Intercambia toda tu mano con la de un rival.',
+      xc_chaos: 'Efecto sorpresa aleatorio (activado por la opción «Carta Caos»).',
+      aide_cartes_btn: '❓ Cartas',
       jouer: '▶ JUGAR', t_cadeau: 'Regalo', t_missions: 'Misiones', t_boutique: 'Tienda', t_profil: 'Perfil',
       piocher: 'Robar', garder: 'Guardar', menu_btn: 'Menú',
       a_toi: 'Tu turno', reflechit: '%s está pensando…', famille: 'Familia: %s', pioche: 'Mazo (%s)',
@@ -2018,7 +2084,7 @@
     const idsJouables = new Set(legaux.filter((a) => a.type === 'play' || a.type === 'playDrawn').map((a) => a.cardId));
 
     const margeBas = H * 0.14;
-    const yMain = H - ch - 18;
+    const yMain = H - ch - Math.max(34, H * 0.055);
     const dispo = W - cw - 24;
     const pas = main.length > 1 ? Math.min(cw * 0.72, dispo / (main.length - 1)) : 0;
     const largeurTotale = cw + pas * (main.length - 1);
@@ -2306,6 +2372,48 @@
   }
 
   // Panneau des missions du jour.
+  // Panneau d'explication d'UNE option de règle (ouvert par l'icône ❓).
+  function panneauAideOption(g) {
+    const titres = { stack: t('opt_stack'), orig: t('opt_orig'), chaos: t('opt_chaos'), wild8: t('opt_wild8'), score: t('opt_score') };
+    const textes = { stack: t('xpl_stack'), orig: t('xpl_orig'), chaos: t('xpl_chaos'), wild8: t('xpl_wild8'), score: t('xpl_score') };
+    const o = overlay(); o.className = ''; o.style.display = 'flex';
+    o.innerHTML = '<div class="panneau large"><h2>' + (titres[g] || t('aide_regles_titre')) + '</h2>' +
+      '<p style="color:#d7dcf3;font-size:14px;line-height:1.55">' + (textes[g] || '') + '</p>' +
+      '<button id="aoFermer" class="gros">OK</button></div>';
+    document.getElementById('aoFermer').onclick = () => { Sons.clic(); menu(); };
+  }
+
+  // Panneau listant toutes les cartes spéciales et leur effet.
+  function panneauAideCartes(retourMenu) {
+    const lignes = [
+      ['🌈', t('nc_prisme'), t('xc_prisme')],
+      ['🌈', t('nc_prisme4'), t('xc_prisme4')],
+      ['+2', t('nc_plus2'), t('xc_plus2')],
+      ['⊘', t('nc_saut'), t('xc_saut')],
+      ['⇄', t('nc_sens'), t('xc_sens')],
+      ['🪞', t('nc_miroir'), t('xc_miroir')],
+      ['🛡', t('nc_bouclier'), t('xc_bouclier')],
+      ['🧲', t('nc_aimant'), t('xc_aimant')],
+      ['🔁', t('nc_echange'), t('xc_echange')],
+      ['🎲', t('nc_chaos'), t('xc_chaos')],
+    ];
+    let html = '<div class="panneau large"><h2>' + t('aide_cartes_titre') + '</h2>';
+    html += '<div style="max-height:56vh;overflow-y:auto">';
+    for (const l of lignes) {
+      html += '<div style="display:flex;gap:10px;align-items:flex-start;margin:11px 0">' +
+        '<div style="flex:0 0 44px;text-align:center;font-size:19px;font-weight:900;color:#ffcf33">' + l[0] + '</div>' +
+        '<div style="flex:1"><b style="color:#fff;font-size:14px">' + l[1] + '</b>' +
+        '<div style="color:#c3c9e4;font-size:13px;line-height:1.45;margin-top:2px">' + l[2] + '</div></div></div>';
+    }
+    html += '</div><button id="acFermer" class="gros">OK</button></div>';
+    const o = overlay(); o.className = ''; o.style.display = 'flex';
+    o.innerHTML = html;
+    document.getElementById('acFermer').onclick = () => {
+      Sons.clic();
+      if (retourMenu === false) { fermerOverlay(); rendre(); } else { menu(); }
+    };
+  }
+
   function panneauMissions() {
     const o = overlay(); o.className = ''; o.style.display = 'flex';
     let html = '<div class="panneau large"><h2>' + t('missions_titre') + '</h2>';
@@ -2418,8 +2526,13 @@
 
     html += '<button class="lienOptions" id="toggleOpt">' + t('options_regles') + ' ' + (menuOptions ? '▲' : '▼') + '</button>';
     if (menuOptions) {
-      const opt = (g, lab) => '<button class="opt' + (menuChoix[g] ? ' actif' : '') + '" data-g="' + g + '" data-v="toggle">' + (menuChoix[g] ? '✅' : '⬜') + ' ' + lab + '</button>';
-      html += '<div class="optbloc">' + opt('stack', t('opt_stack')) + opt('orig', t('opt_orig')) + opt('chaos', t('opt_chaos')) + opt('wild8', t('opt_wild8')) + opt('score', t('opt_score')) + '</div>';
+      const opt = (g, lab, xpl) => '<div class="optrow">'
+        + '<button class="opt' + (menuChoix[g] ? ' actif' : '') + '" data-g="' + g + '" data-v="toggle">' + (menuChoix[g] ? '✅' : '⬜') + ' ' + lab + '</button>'
+        + '<button class="optaide" data-xpl="' + g + '" aria-label="?">❓</button></div>';
+      html += '<div class="optbloc">'
+        + opt('stack', t('opt_stack')) + opt('orig', t('opt_orig')) + opt('chaos', t('opt_chaos'))
+        + opt('wild8', t('opt_wild8')) + opt('score', t('opt_score')) + '</div>';
+      html += '<button class="lienOptions" id="btnAideCartes" style="padding-top:2px">❓ ' + t('aide_cartes_titre').replace('🃏 ', '') + '</button>';
     }
 
     html += '<button id="cfgJouer" class="jouer">' + t('jouer') + '</button>';
@@ -2444,6 +2557,11 @@
       };
     });
     const tg = document.getElementById('toggleOpt'); if (tg) tg.onclick = () => { Sons.clic(); menuOptions = !menuOptions; menu(); };
+    const aides = document.querySelectorAll ? document.querySelectorAll('.optaide') : [];
+    if (aides.forEach) aides.forEach((b) => {
+      b.onclick = (ev) => { ev.stopPropagation(); Sons.clic(); panneauAideOption(b.dataset.xpl); };
+    });
+    const bAC = document.getElementById('btnAideCartes'); if (bAC) bAC.onclick = () => { Sons.clic(); panneauAideCartes(); };
 
     document.getElementById('cfgJouer').onclick = () => {
       const config = {
@@ -2506,6 +2624,8 @@
     document.getElementById('btnGarder').onclick = () => { initAudio(); if (jeu) { agir({ type: 'pass' }); boucle(); } };
     document.getElementById('btnSparko').onclick = () => { initAudio(); if (jeu) { statsPartie.sparko = true; agir({ type: 'announce', playerIndex: jeu.humain }); Sons.sparko(); rendre(); } };
     document.getElementById('btnMenu').onclick = () => { initAudio(); Sons.clic(); menu(); };
+    const bA = document.getElementById('btnAide');
+    if (bA) bA.onclick = () => { initAudio(); Sons.clic(); panneauAideCartes(false); };
 
     // Bouton son (coupe/rétablit, mémorisé dans le profil)
     const btnSon = document.getElementById('btnSon');
